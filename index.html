@@ -13,6 +13,7 @@
     <nav class="view-switch" aria-label="Хэсэг сонгох">
       <button type="button" data-view="content" aria-pressed="true">Агуулга</button>
       <button type="button" data-view="exercise" aria-pressed="false">Дасгал</button>
+      <button type="button" data-view="docs" aria-pressed="false">Баримт бичиг</button>
     </nav>
   </header>
 
@@ -41,8 +42,26 @@
     <button type="button" id="next-btn">Дараах →</button>
   </nav>
 
+  <main class="layout" id="view-docs" hidden>
+    <nav class="sidebar" aria-label="Баримтын төрөл ба нэр">
+      <div class="chapter-tabs" id="docs-tabs" role="tablist"></div>
+      <p class="chapter-title" id="docs-title"></p>
+      <ol class="topic-list" id="docs-list"></ol>
+    </nav>
+
+    <article class="topic" id="docs-area" aria-live="polite"></article>
+  </main>
+
+  <nav class="pager" id="docs-pager" aria-label="Баримт шилжих" hidden>
+    <button type="button" id="docs-prev">← Өмнөх</button>
+    <span class="pager-pos" id="docs-pos"></span>
+    <button type="button" id="docs-next">Дараах →</button>
+  </nav>
+
   <script src="data.js"></script>
   <script src="logic.js"></script>
   <script src="app.js"></script>
+  <script src="docs-data.js"></script>
+  <script src="docs-view.js"></script>
 </body>
 </html>

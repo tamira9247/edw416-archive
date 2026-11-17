@@ -156,6 +156,7 @@
   const views = {
     content: [document.getElementById("view-content"), document.getElementById("pager")],
     exercise: [document.getElementById("view-exercise")],
+    docs: [document.getElementById("view-docs"), document.getElementById("docs-pager")],
   };
   const viewButtons = document.querySelectorAll("[data-view]");
 
