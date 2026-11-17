@@ -169,6 +169,213 @@
   el.prev.addEventListener("click", () => go(current - 1));
   el.next.addEventListener("click", () => go(current + 1));
 
+  // ---------- Харагдац солих (Агуулга / Дасгал) ----------
+
+  const views = {
+    content: [document.getElementById("view-content"), document.getElementById("pager")],
+    exercise: [document.getElementById("view-exercise")],
+  };
+  const viewButtons = document.querySelectorAll("[data-view]");
+
+  function showView(name) {
+    Object.keys(views).forEach((k) => views[k].forEach((node) => { node.hidden = k !== name; }));
+    viewButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === name)));
+  }
+
+  viewButtons.forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
+
+  // ---------- Алдаа олж засах дасгал ----------
+
+  const exercises = Array.isArray(DATA.exercises) ? DATA.exercises : [];
+  const exList = document.getElementById("exercise-list");
+  const exArea = document.getElementById("exercise-area");
+
+  // Идэвхтэй дасгалын төлөв
+  let ex = null;
+
+  function renderExerciseList() {
+    exList.innerHTML = "";
+    exArea.innerHTML = "";
+    if (exercises.length === 0) {
+      exArea.appendChild(make("p", "empty", "Удахгүй нэмэгдэнэ"));
+      return;
+    }
+    exercises.forEach((e, i) => {
+      const btn = make("button", "topic-link");
+      btn.type = "button";
+      btn.appendChild(make("span", "topic-week", e.type));
+      btn.appendChild(make("span", "topic-name", e.title));
+      btn.addEventListener("click", () => startExercise(i));
+      exList.appendChild(make("li")).appendChild(btn);
+    });
+    exArea.appendChild(make("p", "hint", "Зүүн талаас баримтын жишээ сонгоно уу."));
+  }
+
+  function startExercise(index) {
+    const exercise = exercises[index];
+    ex = {
+      index: index,
+      exercise: exercise,
+      total: exercise.parts.filter((p) => p.error).length,
+      found: new Set(),
+      wrong: 0,
+      finished: false,
+      errorButtons: {},
+    };
+    exList.querySelectorAll("button").forEach((b, j) => {
+      if (j === index) b.setAttribute("aria-current", "true");
+      else b.removeAttribute("aria-current");
+    });
+    renderExercise();
+  }
+
+  function renderExercise() {
+    const e = ex.exercise;
+    exArea.innerHTML = "";
+    exArea.appendChild(make("p", "topic-meta", e.type));
+    exArea.appendChild(make("h2", null, e.title));
+    exArea.appendChild(make("p", "hint", "Баримт дээрх алдаатай хэсэг дээр дарна уу."));
+
+    ex.status = make("p", "ex-status");
+    exArea.appendChild(ex.status);
+
+    const doc = make("div", "doc");
+    e.parts.forEach((part, pi) => {
+      if (part.error) {
+        const b = make("button", "seg");
+        b.type = "button";
+        b.appendChild(make("span", "seg-orig", part.text));
+        b.addEventListener("click", () => onErrorClick(pi));
+        ex.errorButtons[pi] = b;
+        doc.appendChild(b);
+        return;
+      }
+      // Алдаагүй хэсгийг үг бүрээр нь дарж болохоор хуваана
+      part.text.split(/(\s+)/).forEach((tok) => {
+        if (!tok) return;
+        if (/^\s+$/.test(tok)) {
+          doc.appendChild(document.createTextNode(tok));
+          return;
+        }
+        const b = make("button", "seg", tok);
+        b.type = "button";
+        b.addEventListener("click", () => onPlainClick(b));
+        doc.appendChild(b);
+      });
+    });
+    exArea.appendChild(doc);
+
+    ex.feedback = make("div", "ex-feedback");
+    ex.feedback.setAttribute("aria-live", "polite");
+    exArea.appendChild(ex.feedback);
+
+    const actions = make("div", "ex-actions");
+    ex.finishBtn = make("button", "btn-primary", "Дуусгах");
+    ex.finishBtn.type = "button";
+    ex.finishBtn.addEventListener("click", finishExercise);
+    const restart = make("button", "btn-secondary", "Дахин эхлэх");
+    restart.type = "button";
+    restart.addEventListener("click", () => startExercise(ex.index));
+    actions.appendChild(ex.finishBtn);
+    actions.appendChild(restart);
+    exArea.appendChild(actions);
+
+    updateStatus();
+  }
+
+  function updateStatus() {
+    if (ex.finished) {
+      const missed = ex.total - ex.found.size;
+      ex.status.textContent =
+        "Дууссан: олсон " + ex.found.size + " / " + ex.total +
+        ", олоогүй " + missed + ", буруу дарсан " + ex.wrong;
+    } else {
+      ex.status.textContent = "Олсон " + ex.found.size + " / " + ex.total + " · Буруу дарсан: " + ex.wrong;
+    }
+  }
+
+  // Алдааг зөв хувилбартай нь баримт дээр харуулна
+  function revealError(pi, cls) {
+    const b = ex.errorButtons[pi];
+    b.classList.add(cls);
+    if (!b.querySelector(".seg-fix")) {
+      b.appendChild(make("span", "seg-fix", ex.exercise.parts[pi].error.correct));
+    }
+  }
+
+  function errorDetail(part) {
+    const box = make("div", "error-detail");
+    const line = make("p");
+    line.appendChild(make("span", "seg-orig-inline", part.text));
+    line.appendChild(document.createTextNode(" → "));
+    line.appendChild(make("strong", null, part.error.correct));
+    box.appendChild(line);
+    if (filled(part.error.explanation)) box.appendChild(make("p", null, part.error.explanation));
+    const ref = part.error.reference;
+    if (ref && filled(ref.title)) {
+      const r = make("p", "ref-inline");
+      r.appendChild(make("span", "ref-title", ref.title));
+      if (filled(ref.clause)) r.appendChild(make("span", "ref-clause", " · " + ref.clause + "-р заалт"));
+      box.appendChild(r);
+    }
+    return box;
+  }
+
+  function setFeedback(kind, heading, nodes) {
+    ex.feedback.innerHTML = "";
+    ex.feedback.className = "ex-feedback " + kind;
+    ex.feedback.appendChild(make("p", "ex-feedback-title", heading));
+    (nodes || []).forEach((n) => ex.feedback.appendChild(n));
+  }
+
+  function onErrorClick(pi) {
+    const part = ex.exercise.parts[pi];
+    if (!ex.finished && !ex.found.has(pi)) {
+      ex.found.add(pi);
+      revealError(pi, "found");
+      updateStatus();
+    }
+    if (ex.found.has(pi)) setFeedback("ok", "Зөв! Алдаа оллоо.", [errorDetail(part)]);
+    else setFeedback("bad", "Олоогүй алдаа", [errorDetail(part)]);
+
+    if (!ex.finished && ex.found.size === ex.total) finishExercise();
+  }
+
+  function onPlainClick(b) {
+    if (!ex.finished) {
+      ex.wrong += 1;
+      updateStatus();
+      b.classList.remove("wrong-flash");
+      void b.offsetWidth; // хөдөлгөөнийг дахин эхлүүлнэ
+      b.classList.add("wrong-flash");
+    }
+    setFeedback("neutral", "Энд алдаа байхгүй");
+  }
+
+  function finishExercise() {
+    if (ex.finished) return;
+    ex.finished = true;
+    ex.finishBtn.disabled = true;
+
+    const missed = [];
+    ex.exercise.parts.forEach((part, pi) => {
+      if (part.error && !ex.found.has(pi)) {
+        revealError(pi, "missed");
+        missed.push(errorDetail(part));
+      }
+    });
+    updateStatus();
+
+    if (missed.length === 0) {
+      setFeedback("ok", "Бүх алдааг оллоо!");
+    } else {
+      setFeedback("bad", "Олоогүй " + missed.length + " алдаа улаанаар тэмдэглэгдлээ:", missed);
+    }
+  }
+
+  // ---------- Эхлүүлэх ----------
+
   current = indexFromHash();
   render();
+  renderExerciseList();
 })();

@@ -10,9 +10,13 @@
   <header class="site-header">
     <p class="course-code">E.DW416</p>
     <h1>Архив, баримт бичигтэй ажиллах арга зүй</h1>
+    <nav class="view-switch" aria-label="Хэсэг сонгох">
+      <button type="button" data-view="content" aria-pressed="true">Агуулга</button>
+      <button type="button" data-view="exercise" aria-pressed="false">Дасгал</button>
+    </nav>
   </header>
 
-  <main class="layout">
+  <main class="layout" id="view-content">
     <nav class="sidebar" aria-label="Бүлэг ба сэдэв">
       <div class="chapter-tabs" id="chapter-tabs" role="tablist"></div>
       <p class="chapter-title" id="chapter-title"></p>
@@ -22,7 +26,16 @@
     <article class="topic" id="topic" aria-live="polite"></article>
   </main>
 
-  <nav class="pager" aria-label="Сэдэв шилжих">
+  <main class="layout" id="view-exercise" hidden>
+    <nav class="sidebar" aria-label="Дасгалын жишээ">
+      <p class="chapter-title">Алдаа олж засах дасгал</p>
+      <ol class="topic-list" id="exercise-list"></ol>
+    </nav>
+
+    <article class="topic" id="exercise-area"></article>
+  </main>
+
+  <nav class="pager" id="pager" aria-label="Сэдэв шилжих">
     <button type="button" id="prev-btn">← Өмнөх</button>
     <span class="pager-pos" id="pager-pos"></span>
     <button type="button" id="next-btn">Дараах →</button>
