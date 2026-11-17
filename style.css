@@ -1,0 +1,182 @@
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --text: #1f2328;
+  --muted: #5d6470;
+  --border: #dedbd2;
+  --accent: #1f5f8b;
+  --accent-soft: #e4eef5;
+  --disabled: #b9bcc2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181c;
+    --surface: #1f2228;
+    --text: #e6e7ea;
+    --muted: #9aa1ab;
+    --border: #343841;
+    --accent: #7db4dc;
+    --accent-soft: #233442;
+    --disabled: #555a63;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  padding-bottom: 72px; /* доод pager-т зай */
+}
+
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- Толгой ---------- */
+
+.site-header { padding: 20px 16px 8px; max-width: 1100px; margin: 0 auto; }
+.course-code { margin: 0; color: var(--accent); font-weight: 600; font-size: 14px; letter-spacing: .05em; }
+.site-header h1 { margin: 2px 0 0; font-size: 22px; line-height: 1.3; }
+
+/* ---------- Бүтэц ---------- */
+
+.layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px 16px 24px;
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 800px) {
+  .layout { grid-template-columns: 300px 1fr; align-items: start; }
+  .sidebar { position: sticky; top: 16px; }
+}
+
+/* ---------- Бүлэг ---------- */
+
+.chapter-tabs { display: flex; gap: 6px; }
+.chapter-tab {
+  flex: 1;
+  padding: 8px 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+}
+.chapter-tab[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.chapter-title { margin: 10px 2px; font-weight: 600; font-size: 15px; line-height: 1.4; }
+
+/* ---------- Сэдвийн жагсаалт ---------- */
+
+.topic-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.topic-link {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+.topic-link:hover { background: var(--surface); border-color: var(--border); }
+.topic-link[aria-current="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.topic-week { font-size: 13px; color: var(--muted); }
+.topic-name { font-size: 15px; }
+
+/* Утсан дээр жагсаалт хэвтээ гүйдэг */
+@media (max-width: 799px) {
+  .topic-list { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: 4px; }
+  .topic-link { border-color: var(--border); background: var(--surface); }
+}
+
+/* ---------- Сэдвийн агуулга ---------- */
+
+.topic {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 0;
+  scroll-margin-top: 12px;
+}
+.topic h2 { margin: 2px 0 10px; font-size: 24px; line-height: 1.3; }
+.topic-meta { margin: 0; color: var(--muted); font-size: 14px; }
+
+.clo-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.clo-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+.clo-badge {
+  min-width: 28px;
+  padding: 1px 8px;
+  text-align: center;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.topic-section { margin-top: 22px; }
+.topic-section h3 { margin: 0 0 6px; font-size: 18px; }
+.topic-section p { margin: 0 0 10px; }
+.topic-section ul { margin: 0; padding-left: 20px; }
+
+.references { list-style: none; padding-left: 0 !important; display: grid; gap: 6px; }
+.references li {
+  display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline;
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 4px;
+}
+.ref-title { font-weight: 600; }
+.ref-clause { color: var(--muted); font-size: 15px; }
+
+.empty {
+  margin: 28px 0 8px;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+/* ---------- Өмнөх / Дараах ---------- */
+
+.pager {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+.pager button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.pager button:disabled {
+  background: transparent;
+  border-color: var(--disabled);
+  color: var(--disabled);
+  cursor: not-allowed;
+}
+.pager-pos { color: var(--muted); font-size: 14px; }

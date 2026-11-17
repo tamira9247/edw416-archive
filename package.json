@@ -1,0 +1,9 @@
+{
+  "name": "edw416-archive",
+  "version": "0.1.0",
+  "private": true,
+  "description": "E.DW416 Архив, баримт бичигтэй ажиллах арга зүй — суралцах вэб",
+  "scripts": {
+    "test": "echo Тест одоохондоо байхгүй"
+  }
+}

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="mn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>E.DW416 — Архив, баримт бичиг</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <p class="course-code">E.DW416</p>
+    <h1>Архив, баримт бичигтэй ажиллах арга зүй</h1>
+  </header>
+
+  <main class="layout">
+    <nav class="sidebar" aria-label="Бүлэг ба сэдэв">
+      <div class="chapter-tabs" id="chapter-tabs" role="tablist"></div>
+      <p class="chapter-title" id="chapter-title"></p>
+      <ol class="topic-list" id="topic-list"></ol>
+    </nav>
+
+    <article class="topic" id="topic" aria-live="polite"></article>
+  </main>
+
+  <nav class="pager" aria-label="Сэдэв шилжих">
+    <button type="button" id="prev-btn">← Өмнөх</button>
+    <span class="pager-pos" id="pager-pos"></span>
+    <button type="button" id="next-btn">Дараах →</button>
+  </nav>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
