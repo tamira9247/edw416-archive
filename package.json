@@ -4,6 +4,6 @@
   "private": true,
   "description": "E.DW416 Архив, баримт бичигтэй ажиллах арга зүй — суралцах вэб",
   "scripts": {
-    "test": "echo No tests yet"
+    "test": "node --test"
   }
 }

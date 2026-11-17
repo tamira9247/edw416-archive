@@ -3,6 +3,7 @@
 
   const topics = DATA.topics.slice().sort((a, b) => a.id - b.id);
   const chapters = DATA.chapters;
+  const { filled, hasContent, topicTitle } = Logic;
 
   const el = {
     tabs: document.getElementById("chapter-tabs"),
@@ -27,19 +28,6 @@
 
   function chapterOf(topic) {
     return chapters.find((c) => c.id === topic.chapter);
-  }
-
-  function topicTitle(topic) {
-    return topic.title && topic.title.trim() ? topic.title : "Сэдэв " + topic.id;
-  }
-
-  function filled(value) {
-    if (Array.isArray(value)) return value.length > 0;
-    return typeof value === "string" && value.trim() !== "";
-  }
-
-  function hasContent(topic) {
-    return ["goal", "concepts", "lecture", "seminar", "references"].some((k) => filled(topic[k]));
   }
 
   // Олон мөртэй текстийг догол мөр болгон харуулна
@@ -69,8 +57,8 @@
       btn.setAttribute("role", "tab");
       btn.setAttribute("aria-selected", String(c.id === active));
       btn.addEventListener("click", () => {
-        const first = topics.findIndex((t) => t.chapter === c.id);
-        if (first !== -1 && c.id !== active) go(first);
+        const indexes = Logic.topicIndexesInChapter(topics, c.id);
+        if (indexes.length > 0 && c.id !== active) go(indexes[0]);
       });
       el.tabs.appendChild(btn);
     });
@@ -80,8 +68,8 @@
   function renderList() {
     el.list.innerHTML = "";
     const active = topics[current].chapter;
-    topics.forEach((t, i) => {
-      if (t.chapter !== active) return;
+    Logic.topicIndexesInChapter(topics, active).forEach((i) => {
+      const t = topics[i];
       const li = make("li");
       const btn = make("button", "topic-link");
       btn.type = "button";
@@ -102,14 +90,14 @@
     el.topic.appendChild(make("p", "topic-meta", ch.id + "-р бүлэг · " + t.id + "-р долоо хоног"));
     el.topic.appendChild(make("h2", null, topicTitle(t)));
 
-    const clo = filled(t.clo) ? t.clo : ch.clo;
+    const clo = Logic.topicClo(t, ch);
     const cloRow = make("div", "clo-row");
     cloRow.appendChild(make("span", "clo-label", "CLO"));
     clo.forEach((n) => cloRow.appendChild(make("span", "clo-badge", String(n))));
     el.topic.appendChild(cloRow);
 
     if (!hasContent(t)) {
-      el.topic.appendChild(make("p", "empty", "Удахгүй нэмэгдэнэ"));
+      el.topic.appendChild(make("p", "empty", Logic.EMPTY_MESSAGE));
       return;
     }
 
@@ -137,8 +125,9 @@
   }
 
   function renderPager() {
-    el.prev.disabled = current === 0;
-    el.next.disabled = current === topics.length - 1;
+    const state = Logic.pagerState(current, topics.length);
+    el.prev.disabled = state.prevDisabled;
+    el.next.disabled = state.nextDisabled;
     el.pos.textContent = (current + 1) + " / " + topics.length;
   }
 
@@ -157,13 +146,6 @@
     history.replaceState(null, "", "#sedev-" + topics[current].id);
     render();
     el.topic.scrollIntoView({ block: "start", behavior: "smooth" });
-  }
-
-  function indexFromHash() {
-    const m = location.hash.match(/^#sedev-(\d+)$/);
-    if (!m) return 0;
-    const i = topics.findIndex((t) => t.id === Number(m[1]));
-    return i === -1 ? 0 : i;
   }
 
   el.prev.addEventListener("click", () => go(current - 1));
@@ -186,18 +168,18 @@
 
   // ---------- Алдаа олж засах дасгал ----------
 
-  const exercises = Array.isArray(DATA.exercises) ? DATA.exercises : [];
+  const exercises = Logic.listExercises(DATA);
   const exList = document.getElementById("exercise-list");
   const exArea = document.getElementById("exercise-area");
 
-  // Идэвхтэй дасгалын төлөв
+  // Идэвхтэй дасгалын төлөв (logic.js-ийн төлөв + дэлгэцийн элементүүд)
   let ex = null;
 
   function renderExerciseList() {
     exList.innerHTML = "";
     exArea.innerHTML = "";
     if (exercises.length === 0) {
-      exArea.appendChild(make("p", "empty", "Удахгүй нэмэгдэнэ"));
+      exArea.appendChild(make("p", "empty", Logic.exercisePlaceholder(exercises)));
       return;
     }
     exercises.forEach((e, i) => {
@@ -208,20 +190,12 @@
       btn.addEventListener("click", () => startExercise(i));
       exList.appendChild(make("li")).appendChild(btn);
     });
-    exArea.appendChild(make("p", "hint", "Зүүн талаас баримтын жишээ сонгоно уу."));
+    exArea.appendChild(make("p", "hint", Logic.exercisePlaceholder(exercises)));
   }
 
   function startExercise(index) {
     const exercise = exercises[index];
-    ex = {
-      index: index,
-      exercise: exercise,
-      total: exercise.parts.filter((p) => p.error).length,
-      found: new Set(),
-      wrong: 0,
-      finished: false,
-      errorButtons: {},
-    };
+    ex = Object.assign(Logic.createExercise(exercise), { index: index, errorButtons: {} });
     exList.querySelectorAll("button").forEach((b, j) => {
       if (j === index) b.setAttribute("aria-current", "true");
       else b.removeAttribute("aria-current");
@@ -284,14 +258,7 @@
   }
 
   function updateStatus() {
-    if (ex.finished) {
-      const missed = ex.total - ex.found.size;
-      ex.status.textContent =
-        "Дууссан: олсон " + ex.found.size + " / " + ex.total +
-        ", олоогүй " + missed + ", буруу дарсан " + ex.wrong;
-    } else {
-      ex.status.textContent = "Олсон " + ex.found.size + " / " + ex.total + " · Буруу дарсан: " + ex.wrong;
-    }
+    ex.status.textContent = Logic.statusText(ex);
   }
 
   // Алдааг зөв хувилбартай нь баримт дээр харуулна
@@ -330,39 +297,36 @@
 
   function onErrorClick(pi) {
     const part = ex.exercise.parts[pi];
-    if (!ex.finished && !ex.found.has(pi)) {
-      ex.found.add(pi);
+    const result = Logic.clickError(ex, pi);
+    if (result.counted) {
       revealError(pi, "found");
       updateStatus();
     }
-    if (ex.found.has(pi)) setFeedback("ok", "Зөв! Алдаа оллоо.", [errorDetail(part)]);
+    if (result.found) setFeedback("ok", "Зөв! Алдаа оллоо.", [errorDetail(part)]);
     else setFeedback("bad", "Олоогүй алдаа", [errorDetail(part)]);
 
-    if (!ex.finished && ex.found.size === ex.total) finishExercise();
+    if (Logic.isComplete(ex)) finishExercise();
   }
 
   function onPlainClick(b) {
-    if (!ex.finished) {
-      ex.wrong += 1;
+    const result = Logic.clickPlain(ex);
+    if (result.counted) {
       updateStatus();
       b.classList.remove("wrong-flash");
       void b.offsetWidth; // хөдөлгөөнийг дахин эхлүүлнэ
       b.classList.add("wrong-flash");
     }
-    setFeedback("neutral", "Энд алдаа байхгүй");
+    setFeedback("neutral", result.message);
   }
 
   function finishExercise() {
-    if (ex.finished) return;
-    ex.finished = true;
+    const missedIndexes = Logic.finishExercise(ex);
+    if (missedIndexes === null) return;
     ex.finishBtn.disabled = true;
 
-    const missed = [];
-    ex.exercise.parts.forEach((part, pi) => {
-      if (part.error && !ex.found.has(pi)) {
-        revealError(pi, "missed");
-        missed.push(errorDetail(part));
-      }
+    const missed = missedIndexes.map((pi) => {
+      revealError(pi, "missed");
+      return errorDetail(ex.exercise.parts[pi]);
     });
     updateStatus();
 
@@ -375,7 +339,7 @@
 
   // ---------- Эхлүүлэх ----------
 
-  current = indexFromHash();
+  current = Logic.indexFromHash(location.hash, topics);
   render();
   renderExerciseList();
 })();
