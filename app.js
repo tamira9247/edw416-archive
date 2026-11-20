@@ -1,4 +1,4 @@
-// E.DW416 суралцах вэб: Лекц, Семинар, Эрх зүйн сан, Лавлах, Зураглал.
+// E.DW416 суралцах вэб: Лекц, Семинар, Эрх зүйн сан, Лавлах, Зураглал, Миний явц.
 // Өгөгдөл: lectures.js (window.COURSE), seminars.js (window.SEMINARS), laws.js (window.LAWS).
 // Лавлах хэсгийг docs-view.js өөрөө зурна; энд зөвхөн харагдацыг солино.
 // Бүх текстийг textContent-оор гаргана.
@@ -12,6 +12,36 @@
 
   const lawById = {};
   LAWS.items.forEach((l) => { lawById[l.id] = l; });
+
+  // ---------- Явц (progress.js) ----------
+
+  const P = window.PROGRESS;
+  let store = null;
+  try { store = window.localStorage; } catch (e) { store = null; }
+  const noStore = { getItem: () => null, setItem: () => { throw new Error("storage алга"); } };
+  let progress = P.load(store || noStore);
+
+  // Уншсан/уншаагүйг сольж хадгалаад дэлгэцийг шинэчилнэ
+  function toggleRead(kind, id) {
+    progress = P.toggle(progress, kind, id);
+    P.save(store || noStore, progress);
+    render();
+  }
+
+  // Хуудасны төгсгөлийн "Уншсан гэж тэмдэглэх" товч
+  function readButton(kind, id) {
+    const done = P.has(progress, kind, id);
+    const b = make("button", "read-btn" + (done ? " done" : ""), done ? "Уншсан ✓" : "Уншсан гэж тэмдэглэх");
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(done));
+    b.addEventListener("click", () => toggleRead(kind, id));
+    return b;
+  }
+
+  // Жагсаалтын нэрний өмнөх ✓ тэмдэг
+  function readMark(kind, id) {
+    return P.has(progress, kind, id) ? make("span", "read-mark", "✓ ") : null;
+  }
 
   // ---------- Туслах функц ----------
 
@@ -123,7 +153,10 @@
       const b = make("button", "topic-link");
       b.type = "button";
       b.appendChild(make("span", "topic-week", "Лекц " + lec.id + " · " + lec.weeks + "-р долоо хоног"));
-      b.appendChild(make("span", "topic-name", lec.title));
+      const name = make("span", "topic-name", lec.title);
+      const mark = readMark("lectures", lec.id);
+      if (mark) name.insertBefore(mark, name.firstChild);
+      b.appendChild(name);
       if (state.view === "lecture" && i === state.lecture) b.setAttribute("aria-current", "true");
       b.addEventListener("click", () => go("lecture", i));
       li.appendChild(b);
@@ -164,6 +197,7 @@
       semBox.appendChild(b);
     });
     art.appendChild(section("Энэ лекцийн семинар", [semBox]));
+    art.appendChild(readButton("lectures", lec.id));
   }
 
   // ---------- Семинар ----------
@@ -176,7 +210,10 @@
       const b = make("button", "topic-link");
       b.type = "button";
       b.appendChild(make("span", "topic-week", "Семинар " + s.id + " · " + s.week + "-р долоо хоног"));
-      b.appendChild(make("span", "topic-name", s.title));
+      const name = make("span", "topic-name", s.title);
+      const mark = readMark("seminars", s.id);
+      if (mark) name.insertBefore(mark, name.firstChild);
+      b.appendChild(name);
       if (state.view === "seminar" && i === state.seminar) b.setAttribute("aria-current", "true");
       b.addEventListener("click", () => go("seminar", i));
       li.appendChild(b);
@@ -204,6 +241,56 @@
     if (s.task) art.appendChild(section("Бие даалт", [make("p", "note", s.task.text)]));
     if (s.ref) art.appendChild(section("Лавлах хэсгээс харах", [make("p", "", s.ref)]));
     art.appendChild(section("Холбогдох эрх зүйн акт", [lawList(s.laws)]));
+    art.appendChild(readButton("seminars", s.id));
+  }
+
+  // ---------- Миний явц ----------
+
+  // Дүүрэх зурвас: "гарчиг — N / M (X%)"
+  function bar(label, done, total) {
+    const pct = total ? Math.round((done * 100) / total) : 0;
+    const wrap = make("div", "bar-row");
+    wrap.appendChild(make("p", "bar-label", label + ": " + done + " / " + total + " (" + pct + "%)"));
+    const track = make("div", "bar");
+    track.setAttribute("role", "progressbar");
+    track.setAttribute("aria-valuemin", "0");
+    track.setAttribute("aria-valuemax", String(total));
+    track.setAttribute("aria-valuenow", String(done));
+    track.setAttribute("aria-label", label);
+    const fill = make("div", "bar-fill");
+    fill.style.width = pct + "%";
+    track.appendChild(fill);
+    wrap.appendChild(track);
+    return wrap;
+  }
+
+  function renderProgress() {
+    const art = $("progress-area");
+    art.textContent = "";
+    const sum = P.summary(progress, COURSE, SEMINARS);
+    art.appendChild(make("h2", "", "Миний явц"));
+    art.appendChild(make("p", "topic-meta", "Уншсан лекц, семинараа тухайн хуудасны доорх товчоор тэмдэглэнэ. Явц энэ төхөөрөмж дээр хадгалагдана."));
+    art.appendChild(bar("Нийт", sum.done, sum.total));
+    art.appendChild(section("Бүлгээр", sum.chapters.map((c) => bar("Бүлэг " + c.id + ". " + c.title, c.done, c.total))));
+
+    // Уншаагүй лекц, семинарууд
+    const left = make("div", "chips");
+    lectures.forEach((lec, i) => {
+      if (P.has(progress, "lectures", lec.id)) return;
+      const b = make("button", "chip", "Лекц " + lec.id + ": " + lec.title);
+      b.type = "button";
+      b.addEventListener("click", () => go("lecture", i));
+      left.appendChild(b);
+    });
+    SEMINARS.forEach((s, i) => {
+      if (P.has(progress, "seminars", s.id)) return;
+      const b = make("button", "chip", "Семинар " + s.id + ": " + s.title);
+      b.type = "button";
+      b.addEventListener("click", () => go("seminar", i));
+      left.appendChild(b);
+    });
+    const body = left.childNodes.length ? left : make("p", "note", "Бүх лекц, семинарыг уншсан байна.");
+    art.appendChild(section("Уншаагүй", [body]));
   }
 
   // ---------- Эрх зүйн сан ----------
@@ -247,7 +334,8 @@
     seminar: [$("view-seminar"), $("pager")],
     laws: [$("view-laws")],
     docs: [$("view-docs"), $("docs-pager")],
-    map: [$("view-map")]
+    map: [$("view-map")],
+    progress: [$("view-progress")]
   };
   const viewButtons = document.querySelectorAll("[data-view]");
   const state = { view: "lecture", lecture: 0, seminar: 0 };
@@ -255,7 +343,7 @@
   function hashFor() {
     if (state.view === "lecture") return "#lekts-" + (state.lecture + 1);
     if (state.view === "seminar") return "#seminar-" + (state.seminar + 1);
-    return { laws: "#erh-zui", docs: "#lavlakh", map: "#zuraglal" }[state.view];
+    return { laws: "#erh-zui", docs: "#lavlakh", map: "#zuraglal", progress: "#miniy-yavts" }[state.view];
   }
 
   function render() {
@@ -267,6 +355,7 @@
     if (state.view === "lecture") { renderLectureList(); renderLecture(); }
     if (state.view === "seminar") { renderSeminarList(); renderSeminar(); }
     if (state.view === "laws") renderLaws();
+    if (state.view === "progress") renderProgress();
     if (state.view === "map" && !$("map-frame").src) $("map-frame").src = "mindmap.html";
 
     // Утсан дээр хэвтээ жагсаалтад сонгосон зүйлийг харагдуулна
@@ -297,13 +386,13 @@
     if (state.view === "seminar") go("seminar", Math.min(Math.max(state.seminar + d, 0), SEMINARS.length - 1));
   }
 
-  // Хаягаас (#lekts-3, #seminar-5, #erh-zui, #lavlakh, #zuraglal) эхлэх байрлал
+  // Хаягаас (#lekts-3, #seminar-5, #erh-zui, #lavlakh, #zuraglal, #miniy-yavts) эхлэх байрлал
   function fromHash(h) {
     let m = /^#lekts-(\d+)$/.exec(h);
     if (m) { const i = +m[1] - 1; if (i >= 0 && i < lectures.length) return ["lecture", i]; }
     m = /^#seminar-(\d+)$/.exec(h);
     if (m) { const i = +m[1] - 1; if (i >= 0 && i < SEMINARS.length) return ["seminar", i]; }
-    const named = { "#erh-zui": "laws", "#lavlakh": "docs", "#zuraglal": "map" }[h];
+    const named = { "#erh-zui": "laws", "#lavlakh": "docs", "#zuraglal": "map", "#miniy-yavts": "progress" }[h];
     if (named) return [named];
     return ["lecture", 0];
   }

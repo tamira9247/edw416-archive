@@ -16,6 +16,7 @@
       <button type="button" data-view="laws" aria-pressed="false">Эрх зүйн сан</button>
       <button type="button" data-view="docs" aria-pressed="false">Лавлах</button>
       <button type="button" data-view="map" aria-pressed="false">Зураглал</button>
+      <button type="button" data-view="progress" aria-pressed="false">Миний явц</button>
     </nav>
   </header>
 
@@ -68,6 +69,11 @@
     <p class="hint"><a href="mindmap.html" target="_blank" rel="noopener">Зураглалыг бүтэн дэлгэцээр нээх</a></p>
   </main>
 
+  <!-- Миний явц (Feature №8, progress.js) -->
+  <main class="layout single" id="view-progress" hidden>
+    <article class="topic" id="progress-area" aria-live="polite"></article>
+  </main>
+
   <footer class="site-footer">
     <p id="checked-note"></p>
   </footer>
@@ -75,6 +81,7 @@
   <script src="lectures.js"></script>
   <script src="seminars.js"></script>
   <script src="laws.js"></script>
+  <script src="progress.js"></script>
   <script src="app.js"></script>
   <script src="docs-data.js"></script>
   <script src="docs-view.js"></script>
