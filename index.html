@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>E.DW416 — Архив, баримт бичиг</title>
+  <title>E.DW416 — Архив, баримт бичигтэй ажиллах арга зүй</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,44 +11,48 @@
     <p class="course-code">E.DW416</p>
     <h1>Архив, баримт бичигтэй ажиллах арга зүй</h1>
     <nav class="view-switch" aria-label="Хэсэг сонгох">
-      <button type="button" data-view="content" aria-pressed="true">Агуулга</button>
-      <button type="button" data-view="exercise" aria-pressed="false">Дасгал</button>
-      <button type="button" data-view="docs" aria-pressed="false">Баримт бичиг</button>
+      <button type="button" data-view="lecture" aria-pressed="true">Лекц</button>
+      <button type="button" data-view="seminar" aria-pressed="false">Семинар</button>
+      <button type="button" data-view="laws" aria-pressed="false">Эрх зүйн сан</button>
+      <button type="button" data-view="docs" aria-pressed="false">Лавлах</button>
+      <button type="button" data-view="map" aria-pressed="false">Зураглал</button>
     </nav>
   </header>
 
-  <main class="layout" id="view-content">
-    <nav class="sidebar" aria-label="Бүлэг ба сэдэв">
-      <div class="chapter-tabs" id="chapter-tabs" role="tablist"></div>
-      <p class="chapter-title" id="chapter-title"></p>
-      <ol class="topic-list" id="topic-list"></ol>
+  <!-- Лекц: 8 лекц -->
+  <main class="layout" id="view-lecture">
+    <nav class="sidebar" aria-label="Лекцийн жагсаалт">
+      <ol class="topic-list" id="lecture-list"></ol>
     </nav>
-
-    <article class="topic" id="topic" aria-live="polite"></article>
+    <article class="topic" id="lecture-area" aria-live="polite"></article>
   </main>
 
-  <main class="layout" id="view-exercise" hidden>
-    <nav class="sidebar" aria-label="Дасгалын жишээ">
-      <p class="chapter-title">Алдаа олж засах дасгал</p>
-      <ol class="topic-list" id="exercise-list"></ol>
+  <!-- Семинар: 16 семинар -->
+  <main class="layout" id="view-seminar" hidden>
+    <nav class="sidebar" aria-label="Семинарын жагсаалт">
+      <ol class="topic-list" id="seminar-list"></ol>
     </nav>
-
-    <article class="topic" id="exercise-area"></article>
+    <article class="topic" id="seminar-area" aria-live="polite"></article>
   </main>
 
-  <nav class="pager" id="pager" aria-label="Сэдэв шилжих">
+  <nav class="pager" id="pager" aria-label="Шилжих">
     <button type="button" id="prev-btn">← Өмнөх</button>
     <span class="pager-pos" id="pager-pos"></span>
     <button type="button" id="next-btn">Дараах →</button>
   </nav>
 
+  <!-- Эрх зүйн сан -->
+  <main class="layout single" id="view-laws" hidden>
+    <article class="topic" id="laws-area"></article>
+  </main>
+
+  <!-- Лавлах: 31 нэр төрөл (docs-data.js, docs-view.js) -->
   <main class="layout" id="view-docs" hidden>
     <nav class="sidebar" aria-label="Баримтын төрөл ба нэр">
       <div class="chapter-tabs" id="docs-tabs" role="tablist"></div>
       <p class="chapter-title" id="docs-title"></p>
       <ol class="topic-list" id="docs-list"></ol>
     </nav>
-
     <article class="topic" id="docs-area" aria-live="polite"></article>
   </main>
 
@@ -58,8 +62,19 @@
     <button type="button" id="docs-next">Дараах →</button>
   </nav>
 
-  <script src="data.js"></script>
-  <script src="logic.js"></script>
+  <!-- Оюуны зураглал -->
+  <main class="layout single" id="view-map" hidden>
+    <iframe class="map-frame" id="map-frame" title="Хичээлийн оюуны зураглал"></iframe>
+    <p class="hint"><a href="mindmap.html" target="_blank" rel="noopener">Зураглалыг бүтэн дэлгэцээр нээх</a></p>
+  </main>
+
+  <footer class="site-footer">
+    <p id="checked-note"></p>
+  </footer>
+
+  <script src="lectures.js"></script>
+  <script src="seminars.js"></script>
+  <script src="laws.js"></script>
   <script src="app.js"></script>
   <script src="docs-data.js"></script>
   <script src="docs-view.js"></script>

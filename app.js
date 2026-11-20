@@ -1,346 +1,320 @@
+// E.DW416 суралцах вэб: Лекц, Семинар, Эрх зүйн сан, Лавлах, Зураглал.
+// Өгөгдөл: lectures.js (window.COURSE), seminars.js (window.SEMINARS), laws.js (window.LAWS).
+// Лавлах хэсгийг docs-view.js өөрөө зурна; энд зөвхөн харагдацыг солино.
+// Бүх текстийг textContent-оор гаргана.
 (function () {
   "use strict";
 
-  const topics = DATA.topics.slice().sort((a, b) => a.id - b.id);
-  const chapters = DATA.chapters;
-  const { filled, hasContent, topicTitle } = Logic;
+  const COURSE = window.COURSE;
+  const SEMINARS = window.SEMINARS;
+  const LAWS = window.LAWS;
+  const $ = (id) => document.getElementById(id);
 
-  const el = {
-    tabs: document.getElementById("chapter-tabs"),
-    chapterTitle: document.getElementById("chapter-title"),
-    list: document.getElementById("topic-list"),
-    topic: document.getElementById("topic"),
-    prev: document.getElementById("prev-btn"),
-    next: document.getElementById("next-btn"),
-    pos: document.getElementById("pager-pos"),
-  };
+  const lawById = {};
+  LAWS.items.forEach((l) => { lawById[l.id] = l; });
 
-  let current = 0; // topics массив дахь индекс
-
-  // ---------- Туслах функцууд ----------
+  // ---------- Туслах функц ----------
 
   function make(tag, className, text) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text !== undefined) node.textContent = text;
-    return node;
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (text !== undefined && text !== null) el.textContent = text;
+    return el;
   }
 
-  function chapterOf(topic) {
-    return chapters.find((c) => c.id === topic.chapter);
+  function section(heading, children) {
+    const s = make("section", "topic-section");
+    s.appendChild(make("h3", "", heading));
+    children.forEach((c) => s.appendChild(c));
+    return s;
   }
 
-  // Олон мөртэй текстийг догол мөр болгон харуулна
-  function paragraphs(text) {
-    const frag = document.createDocumentFragment();
-    text.split(/\n\s*\n/).forEach((p) => {
-      if (p.trim()) frag.appendChild(make("p", null, p.trim()));
-    });
-    return frag;
+  function list(tag, items) {
+    const ul = make(tag);
+    items.forEach((t) => ul.appendChild(make("li", "", t)));
+    return ul;
   }
 
-  function section(heading, body) {
-    const sec = make("section", "topic-section");
-    sec.appendChild(make("h3", null, heading));
-    sec.appendChild(body);
-    return sec;
-  }
-
-  // ---------- Зурах ----------
-
-  function renderTabs() {
-    el.tabs.innerHTML = "";
-    const active = topics[current].chapter;
-    chapters.forEach((c) => {
-      const btn = make("button", "chapter-tab", c.id + "-р бүлэг");
-      btn.type = "button";
-      btn.setAttribute("role", "tab");
-      btn.setAttribute("aria-selected", String(c.id === active));
-      btn.addEventListener("click", () => {
-        const indexes = Logic.topicIndexesInChapter(topics, c.id);
-        if (indexes.length > 0 && c.id !== active) go(indexes[0]);
+  function table(t) {
+    const wrap = make("div", "table-wrap");
+    const tb = make("table", "data");
+    const thead = make("thead");
+    const hr = make("tr");
+    t.head.forEach((h) => hr.appendChild(make("th", "", h)));
+    thead.appendChild(hr);
+    tb.appendChild(thead);
+    const body = make("tbody");
+    t.rows.forEach((r) => {
+      const tr = make("tr");
+      r.forEach((c, i) => {
+        const td = make("td", "", c);
+        td.dataset.l = t.head[i] || "";
+        tr.appendChild(td);
       });
-      el.tabs.appendChild(btn);
+      body.appendChild(tr);
     });
-    el.chapterTitle.textContent = chapterOf(topics[current]).title;
+    tb.appendChild(body);
+    wrap.appendChild(tb);
+    return wrap;
   }
 
-  function renderList() {
-    el.list.innerHTML = "";
-    const active = topics[current].chapter;
-    Logic.topicIndexesInChapter(topics, active).forEach((i) => {
-      const t = topics[i];
+  // Лекцийн блок: p, ul, ol, table, note
+  function block(b) {
+    if (b.p) return make("p", "", b.p);
+    if (b.ul) return list("ul", b.ul);
+    if (b.ol) return list("ol", b.ol);
+    if (b.table) return table(b.table);
+    if (b.note) return make("p", "note", b.note);
+    return make("p");
+  }
+
+  function statusChip(status) {
+    const cls = status === "хүчинтэй" ? "ok" : status === "хүчингүй" ? "bad" : "warn";
+    return make("span", "status " + cls, status);
+  }
+
+  function lawLink(law) {
+    if (law.url) {
+      const a = make("a", "", "Эх сурвалж нээх");
+      a.href = law.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      return a;
+    }
+    return make("span", "muted", 'legalinfo.mn / estandard.gov.mn-ээс "' + (law.search || law.title) + '" гэж хайна');
+  }
+
+  function lawItem(law) {
+    const li = make("li", "law");
+    const top = make("div", "law-top");
+    top.appendChild(make("span", "law-title", law.title));
+    top.appendChild(statusChip(law.status));
+    li.appendChild(top);
+    const meta = [law.date, law.no ? "№ " + law.no : ""].filter(Boolean).join(" · ");
+    if (meta) li.appendChild(make("div", "law-meta", meta));
+    if (law.note) li.appendChild(make("div", "law-note", law.note));
+    li.appendChild(lawLink(law));
+    return li;
+  }
+
+  function lawList(ids) {
+    const ul = make("ul", "laws");
+    ids.forEach((id) => { if (lawById[id]) ul.appendChild(lawItem(lawById[id])); });
+    return ul;
+  }
+
+  function cloRow(clo) {
+    const row = make("div", "clo-row");
+    row.appendChild(make("span", "clo-label", "CLO"));
+    clo.forEach((c) => row.appendChild(make("span", "clo-badge", String(c))));
+    return row;
+  }
+
+  // ---------- Лекц ----------
+
+  const lectures = COURSE.lectures;
+  const chapterOf = (lec) => COURSE.chapters.filter((c) => c.id === lec.chapter)[0];
+
+  function renderLectureList() {
+    const ol = $("lecture-list");
+    ol.textContent = "";
+    lectures.forEach((lec, i) => {
       const li = make("li");
-      const btn = make("button", "topic-link");
-      btn.type = "button";
-      btn.appendChild(make("span", "topic-week", t.id + "-р 7 хоног"));
-      btn.appendChild(make("span", "topic-name", topicTitle(t)));
-      if (i === current) btn.setAttribute("aria-current", "true");
-      btn.addEventListener("click", () => go(i));
-      li.appendChild(btn);
-      el.list.appendChild(li);
+      const b = make("button", "topic-link");
+      b.type = "button";
+      b.appendChild(make("span", "topic-week", "Лекц " + lec.id + " · " + lec.weeks + "-р долоо хоног"));
+      b.appendChild(make("span", "topic-name", lec.title));
+      if (state.view === "lecture" && i === state.lecture) b.setAttribute("aria-current", "true");
+      b.addEventListener("click", () => go("lecture", i));
+      li.appendChild(b);
+      ol.appendChild(li);
     });
   }
 
-  function renderTopic() {
-    const t = topics[current];
-    const ch = chapterOf(t);
-    el.topic.innerHTML = "";
+  function renderLecture() {
+    const lec = lectures[state.lecture];
+    const art = $("lecture-area");
+    art.textContent = "";
+    art.appendChild(make("p", "topic-meta", "Бүлэг " + lec.chapter + ". " + chapterOf(lec).title));
+    art.appendChild(make("h2", "", "Лекц " + lec.id + ". " + lec.title));
+    art.appendChild(make("p", "topic-meta", lec.weeks + "-р долоо хоног · 90 минут"));
+    art.appendChild(cloRow(lec.clo));
 
-    el.topic.appendChild(make("p", "topic-meta", ch.id + "-р бүлэг · " + t.id + "-р долоо хоног"));
-    el.topic.appendChild(make("h2", null, topicTitle(t)));
+    art.appendChild(section("Зорилго", [list("ul", lec.goal)]));
 
-    const clo = Logic.topicClo(t, ch);
-    const cloRow = make("div", "clo-row");
-    cloRow.appendChild(make("span", "clo-label", "CLO"));
-    clo.forEach((n) => cloRow.appendChild(make("span", "clo-badge", String(n))));
-    el.topic.appendChild(cloRow);
+    const dl = make("dl", "concepts");
+    lec.concepts.forEach((c) => {
+      dl.appendChild(make("dt", "", c.term));
+      const dd = make("dd", "", c.def);
+      dd.appendChild(make("span", "ref", " (" + c.ref + ")"));
+      dl.appendChild(dd);
+    });
+    art.appendChild(section("Гол ойлголт", [dl]));
 
-    if (!hasContent(t)) {
-      el.topic.appendChild(make("p", "empty", Logic.EMPTY_MESSAGE));
-      return;
-    }
+    lec.sections.forEach((s) => art.appendChild(section(s.h, s.blocks.map(block))));
 
-    if (filled(t.goal)) el.topic.appendChild(section("Сэдвийн зорилго", paragraphs(t.goal)));
+    art.appendChild(section("Холбогдох эрх зүйн акт", [lawList(lec.laws)]));
 
-    if (filled(t.concepts)) {
-      const ul = make("ul", "concepts");
-      t.concepts.forEach((c) => ul.appendChild(make("li", null, c)));
-      el.topic.appendChild(section("Гол ойлголт", ul));
-    }
+    const sems = SEMINARS.filter((s) => s.lecture === lec.id);
+    const semBox = make("div", "chips");
+    sems.forEach((s) => {
+      const b = make("button", "chip", "Семинар " + s.id + ": " + s.title);
+      b.type = "button";
+      b.addEventListener("click", () => go("seminar", s.id - 1));
+      semBox.appendChild(b);
+    });
+    art.appendChild(section("Энэ лекцийн семинар", [semBox]));
+  }
 
-    if (filled(t.lecture)) el.topic.appendChild(section("Лекц", paragraphs(t.lecture)));
-    if (filled(t.seminar)) el.topic.appendChild(section("Семинар", paragraphs(t.seminar)));
+  // ---------- Семинар ----------
 
-    if (filled(t.references)) {
-      const ul = make("ul", "references");
-      t.references.forEach((r) => {
-        const li = make("li");
-        li.appendChild(make("span", "ref-title", r.title));
-        if (r.clause) li.appendChild(make("span", "ref-clause", r.clause + "-р заалт"));
+  function renderSeminarList() {
+    const ol = $("seminar-list");
+    ol.textContent = "";
+    SEMINARS.forEach((s, i) => {
+      const li = make("li");
+      const b = make("button", "topic-link");
+      b.type = "button";
+      b.appendChild(make("span", "topic-week", "Семинар " + s.id + " · " + s.week + "-р долоо хоног"));
+      b.appendChild(make("span", "topic-name", s.title));
+      if (state.view === "seminar" && i === state.seminar) b.setAttribute("aria-current", "true");
+      b.addEventListener("click", () => go("seminar", i));
+      li.appendChild(b);
+      ol.appendChild(li);
+    });
+  }
+
+  function renderSeminar() {
+    const s = SEMINARS[state.seminar];
+    const lec = lectures[s.lecture - 1];
+    const art = $("seminar-area");
+    art.textContent = "";
+    const back = make("button", "linklike", "Лекц " + lec.id + ". " + lec.title);
+    back.type = "button";
+    back.addEventListener("click", () => go("lecture", lec.id - 1));
+    const meta = make("p", "topic-meta", s.week + "-р долоо хоног · 90 минут · ");
+    meta.appendChild(back);
+    art.appendChild(meta);
+    art.appendChild(make("h2", "", "Семинар " + s.id + ". " + s.title));
+
+    art.appendChild(section("Зорилго", [make("p", "", s.goal)]));
+    art.appendChild(section("Урьдчилан бэлтгэх", [list("ul", s.prepare)]));
+    art.appendChild(section("Хийх ажил", [list("ol", s.steps)]));
+    art.appendChild(section("Гаргах бүтээл", [make("p", "", s.output)]));
+    if (s.task) art.appendChild(section("Бие даалт", [make("p", "note", s.task.text)]));
+    if (s.ref) art.appendChild(section("Лавлах хэсгээс харах", [make("p", "", s.ref)]));
+    art.appendChild(section("Холбогдох эрх зүйн акт", [lawList(s.laws)]));
+  }
+
+  // ---------- Эрх зүйн сан ----------
+
+  function renderLaws() {
+    const art = $("laws-area");
+    art.textContent = "";
+    art.appendChild(make("h2", "", "Эрх зүйн сан"));
+    art.appendChild(make("p", "topic-meta",
+      "Хичээлд хамаарах хууль, журам, стандарт. Статусыг " + LAWS.CHECKED +
+      "-нд шалгав. \"Шалгах\" гэсэн актын хүчин төгөлдөр эсэхийг legalinfo.mn-ээс нягтална."));
+    LAWS.groups.forEach((g) => {
+      const items = LAWS.items.filter((l) => l.group === g.id);
+      if (!items.length) return;
+      const ul = make("ul", "laws");
+      items.forEach((l) => {
+        const li = lawItem(l);
+        const used = lectures.filter((lec) => lec.laws.indexOf(l.id) >= 0);
+        if (used.length) {
+          const box = make("div", "law-used");
+          box.appendChild(make("span", "muted", "Лекц: "));
+          used.forEach((lec) => {
+            const b = make("button", "chip small", String(lec.id));
+            b.type = "button";
+            b.title = lec.title;
+            b.addEventListener("click", () => go("lecture", lec.id - 1));
+            box.appendChild(b);
+          });
+          li.appendChild(box);
+        }
         ul.appendChild(li);
       });
-      el.topic.appendChild(section("Холбогдох хууль, стандарт", ul));
-    }
+      art.appendChild(section(g.title, [ul]));
+    });
   }
 
-  function renderPager() {
-    const state = Logic.pagerState(current, topics.length);
-    el.prev.disabled = state.prevDisabled;
-    el.next.disabled = state.nextDisabled;
-    el.pos.textContent = (current + 1) + " / " + topics.length;
+  // ---------- Харагдац, шилжилт ----------
+
+  const views = {
+    lecture: [$("view-lecture"), $("pager")],
+    seminar: [$("view-seminar"), $("pager")],
+    laws: [$("view-laws")],
+    docs: [$("view-docs"), $("docs-pager")],
+    map: [$("view-map")]
+  };
+  const viewButtons = document.querySelectorAll("[data-view]");
+  const state = { view: "lecture", lecture: 0, seminar: 0 };
+
+  function hashFor() {
+    if (state.view === "lecture") return "#lekts-" + (state.lecture + 1);
+    if (state.view === "seminar") return "#seminar-" + (state.seminar + 1);
+    return { laws: "#erh-zui", docs: "#lavlakh", map: "#zuraglal" }[state.view];
   }
 
   function render() {
-    renderTabs();
-    renderList();
-    renderTopic();
-    renderPager();
+    const shown = new Set();
+    Object.keys(views).forEach((k) => { if (k === state.view) views[k].forEach((n) => shown.add(n)); });
+    Object.keys(views).forEach((k) => views[k].forEach((n) => { n.hidden = !shown.has(n); }));
+    viewButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === state.view)));
+
+    if (state.view === "lecture") { renderLectureList(); renderLecture(); }
+    if (state.view === "seminar") { renderSeminarList(); renderSeminar(); }
+    if (state.view === "laws") renderLaws();
+    if (state.view === "map" && !$("map-frame").src) $("map-frame").src = "mindmap.html";
+
+    // Утсан дээр хэвтээ жагсаалтад сонгосон зүйлийг харагдуулна
+    const cur = document.querySelector('#view-' + state.view + ' [aria-current="true"]');
+    if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest", inline: "center" });
+
+    const paged = state.view === "lecture" || state.view === "seminar";
+    if (paged) {
+      const total = state.view === "lecture" ? lectures.length : SEMINARS.length;
+      const idx = state.view === "lecture" ? state.lecture : state.seminar;
+      $("prev-btn").disabled = idx === 0;
+      $("next-btn").disabled = idx === total - 1;
+      $("pager-pos").textContent = (idx + 1) + " / " + total;
+    }
   }
 
-  // ---------- Шилжилт ----------
-
-  function go(index) {
-    if (index < 0 || index >= topics.length) return;
-    current = index;
-    history.replaceState(null, "", "#sedev-" + topics[current].id);
+  function go(view, index) {
+    state.view = view;
+    if (view === "lecture" && index !== undefined) state.lecture = index;
+    if (view === "seminar" && index !== undefined) state.seminar = index;
     render();
-    el.topic.scrollIntoView({ block: "start", behavior: "smooth" });
+    history.replaceState(null, "", hashFor());
+    window.scrollTo({ top: 0 });
   }
 
-  el.prev.addEventListener("click", () => go(current - 1));
-  el.next.addEventListener("click", () => go(current + 1));
-
-  // ---------- Харагдац солих (Агуулга / Дасгал) ----------
-
-  const views = {
-    content: [document.getElementById("view-content"), document.getElementById("pager")],
-    exercise: [document.getElementById("view-exercise")],
-    docs: [document.getElementById("view-docs"), document.getElementById("docs-pager")],
-  };
-  const viewButtons = document.querySelectorAll("[data-view]");
-
-  function showView(name) {
-    Object.keys(views).forEach((k) => views[k].forEach((node) => { node.hidden = k !== name; }));
-    viewButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === name)));
+  function step(d) {
+    if (state.view === "lecture") go("lecture", Math.min(Math.max(state.lecture + d, 0), lectures.length - 1));
+    if (state.view === "seminar") go("seminar", Math.min(Math.max(state.seminar + d, 0), SEMINARS.length - 1));
   }
 
-  viewButtons.forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
-
-  // ---------- Алдаа олж засах дасгал ----------
-
-  const exercises = Logic.listExercises(DATA);
-  const exList = document.getElementById("exercise-list");
-  const exArea = document.getElementById("exercise-area");
-
-  // Идэвхтэй дасгалын төлөв (logic.js-ийн төлөв + дэлгэцийн элементүүд)
-  let ex = null;
-
-  function renderExerciseList() {
-    exList.innerHTML = "";
-    exArea.innerHTML = "";
-    if (exercises.length === 0) {
-      exArea.appendChild(make("p", "empty", Logic.exercisePlaceholder(exercises)));
-      return;
-    }
-    exercises.forEach((e, i) => {
-      const btn = make("button", "topic-link");
-      btn.type = "button";
-      btn.appendChild(make("span", "topic-week", e.type));
-      btn.appendChild(make("span", "topic-name", e.title));
-      btn.addEventListener("click", () => startExercise(i));
-      exList.appendChild(make("li")).appendChild(btn);
-    });
-    exArea.appendChild(make("p", "hint", Logic.exercisePlaceholder(exercises)));
+  // Хаягаас (#lekts-3, #seminar-5, #erh-zui, #lavlakh, #zuraglal) эхлэх байрлал
+  function fromHash(h) {
+    let m = /^#lekts-(\d+)$/.exec(h);
+    if (m) { const i = +m[1] - 1; if (i >= 0 && i < lectures.length) return ["lecture", i]; }
+    m = /^#seminar-(\d+)$/.exec(h);
+    if (m) { const i = +m[1] - 1; if (i >= 0 && i < SEMINARS.length) return ["seminar", i]; }
+    const named = { "#erh-zui": "laws", "#lavlakh": "docs", "#zuraglal": "map" }[h];
+    if (named) return [named];
+    return ["lecture", 0];
   }
 
-  function startExercise(index) {
-    const exercise = exercises[index];
-    ex = Object.assign(Logic.createExercise(exercise), { index: index, errorButtons: {} });
-    exList.querySelectorAll("button").forEach((b, j) => {
-      if (j === index) b.setAttribute("aria-current", "true");
-      else b.removeAttribute("aria-current");
-    });
-    renderExercise();
-  }
+  viewButtons.forEach((b) => b.addEventListener("click", () => go(b.dataset.view)));
+  $("prev-btn").addEventListener("click", () => step(-1));
+  $("next-btn").addEventListener("click", () => step(1));
+  window.addEventListener("hashchange", () => { const r = fromHash(location.hash); go(r[0], r[1]); });
 
-  function renderExercise() {
-    const e = ex.exercise;
-    exArea.innerHTML = "";
-    exArea.appendChild(make("p", "topic-meta", e.type));
-    exArea.appendChild(make("h2", null, e.title));
-    exArea.appendChild(make("p", "hint", "Баримт дээрх алдаатай хэсэг дээр дарна уу."));
+  $("checked-note").textContent = "Эрх зүйн актын статусыг " + LAWS.CHECKED + "-нд шалгав.";
 
-    ex.status = make("p", "ex-status");
-    exArea.appendChild(ex.status);
-
-    const doc = make("div", "doc");
-    e.parts.forEach((part, pi) => {
-      if (part.error) {
-        const b = make("button", "seg");
-        b.type = "button";
-        b.appendChild(make("span", "seg-orig", part.text));
-        b.addEventListener("click", () => onErrorClick(pi));
-        ex.errorButtons[pi] = b;
-        doc.appendChild(b);
-        return;
-      }
-      // Алдаагүй хэсгийг үг бүрээр нь дарж болохоор хуваана
-      part.text.split(/(\s+)/).forEach((tok) => {
-        if (!tok) return;
-        if (/^\s+$/.test(tok)) {
-          doc.appendChild(document.createTextNode(tok));
-          return;
-        }
-        const b = make("button", "seg", tok);
-        b.type = "button";
-        b.addEventListener("click", () => onPlainClick(b));
-        doc.appendChild(b);
-      });
-    });
-    exArea.appendChild(doc);
-
-    ex.feedback = make("div", "ex-feedback");
-    ex.feedback.setAttribute("aria-live", "polite");
-    exArea.appendChild(ex.feedback);
-
-    const actions = make("div", "ex-actions");
-    ex.finishBtn = make("button", "btn-primary", "Дуусгах");
-    ex.finishBtn.type = "button";
-    ex.finishBtn.addEventListener("click", finishExercise);
-    const restart = make("button", "btn-secondary", "Дахин эхлэх");
-    restart.type = "button";
-    restart.addEventListener("click", () => startExercise(ex.index));
-    actions.appendChild(ex.finishBtn);
-    actions.appendChild(restart);
-    exArea.appendChild(actions);
-
-    updateStatus();
-  }
-
-  function updateStatus() {
-    ex.status.textContent = Logic.statusText(ex);
-  }
-
-  // Алдааг зөв хувилбартай нь баримт дээр харуулна
-  function revealError(pi, cls) {
-    const b = ex.errorButtons[pi];
-    b.classList.add(cls);
-    if (!b.querySelector(".seg-fix")) {
-      b.appendChild(make("span", "seg-fix", ex.exercise.parts[pi].error.correct));
-    }
-  }
-
-  function errorDetail(part) {
-    const box = make("div", "error-detail");
-    const line = make("p");
-    line.appendChild(make("span", "seg-orig-inline", part.text));
-    line.appendChild(document.createTextNode(" → "));
-    line.appendChild(make("strong", null, part.error.correct));
-    box.appendChild(line);
-    if (filled(part.error.explanation)) box.appendChild(make("p", null, part.error.explanation));
-    const ref = part.error.reference;
-    if (ref && filled(ref.title)) {
-      const r = make("p", "ref-inline");
-      r.appendChild(make("span", "ref-title", ref.title));
-      if (filled(ref.clause)) r.appendChild(make("span", "ref-clause", " · " + ref.clause + "-р заалт"));
-      box.appendChild(r);
-    }
-    return box;
-  }
-
-  function setFeedback(kind, heading, nodes) {
-    ex.feedback.innerHTML = "";
-    ex.feedback.className = "ex-feedback " + kind;
-    ex.feedback.appendChild(make("p", "ex-feedback-title", heading));
-    (nodes || []).forEach((n) => ex.feedback.appendChild(n));
-  }
-
-  function onErrorClick(pi) {
-    const part = ex.exercise.parts[pi];
-    const result = Logic.clickError(ex, pi);
-    if (result.counted) {
-      revealError(pi, "found");
-      updateStatus();
-    }
-    if (result.found) setFeedback("ok", "Зөв! Алдаа оллоо.", [errorDetail(part)]);
-    else setFeedback("bad", "Олоогүй алдаа", [errorDetail(part)]);
-
-    if (Logic.isComplete(ex)) finishExercise();
-  }
-
-  function onPlainClick(b) {
-    const result = Logic.clickPlain(ex);
-    if (result.counted) {
-      updateStatus();
-      b.classList.remove("wrong-flash");
-      void b.offsetWidth; // хөдөлгөөнийг дахин эхлүүлнэ
-      b.classList.add("wrong-flash");
-    }
-    setFeedback("neutral", result.message);
-  }
-
-  function finishExercise() {
-    const missedIndexes = Logic.finishExercise(ex);
-    if (missedIndexes === null) return;
-    ex.finishBtn.disabled = true;
-
-    const missed = missedIndexes.map((pi) => {
-      revealError(pi, "missed");
-      return errorDetail(ex.exercise.parts[pi]);
-    });
-    updateStatus();
-
-    if (missed.length === 0) {
-      setFeedback("ok", "Бүх алдааг оллоо!");
-    } else {
-      setFeedback("bad", "Олоогүй " + missed.length + " алдаа улаанаар тэмдэглэгдлээ:", missed);
-    }
-  }
-
-  // ---------- Эхлүүлэх ----------
-
-  current = Logic.indexFromHash(location.hash, topics);
-  render();
-  renderExerciseList();
+  const start = fromHash(location.hash);
+  go(start[0], start[1]);
 })();

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E.DW416 оюуны зураглал</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: тайван, сургалтын лавлах — нэг баримт бичгийн амьдралын мөчлөгийг тод харуулна
+   IDEA: архивын хавтасны индекс — хууль/стандартын заалт бүр шошготой "картелка"
+   PICTURE: бүх агуулгыг багтаасан дэлгэж-хураадаг мод, дээр нь амьдралын мөчлөгийн зам
+   COLOUR and TYPE: төрийн хөх (#11589F, MNS 5140-3 §3.5), ус цэнхэр, архивын хүрэн; тамганы улаан холбоос; Golos Text
+   LAYOUT: толгой → мөчлөгийн зам → зураглал (түүх, томруулах) → сонгосон зангилааны дэлгэрэнгүй */
+:root{color-scheme:light dark;
+--bg:light-dark(#eef3f8,#0a1726);--panel:light-dark(#ffffff,#10233a);--ink:light-dark(#0c2236,#e6eef7);
+--mute:light-dark(#53687c,#9fb3c7);--line:light-dark(#b9c9d8,#2b4561);
+--c1:#11589f;--c2:#0f7c86;--c3:#9a5a1f;--stamp:#d33a46;--prac:light-dark(#8a5a00,#f0b84a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Golos Text",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(18px,3vw,36px) max(4vw,14px)}
+header.band{padding-bottom:10px}
+h1{font-size:clamp(26px,3.6vw,40px);line-height:1.08;margin:0 0 6px;text-wrap:balance;font-weight:700}
+.lead{margin:0;color:var(--mute);max-width:70ch}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.tools input{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);min-height:44px;width:min(320px,100%)}
+button{font:inherit;font-size:14px;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button[aria-pressed=true]{background:var(--c1);color:#fff;border-color:var(--c1)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--stamp);outline-offset:2px}
+.track{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 0}
+.stage{border:0;background:var(--panel);border-radius:999px;padding:0 14px;font-size:14px;box-shadow:inset 0 0 0 1px var(--line)}
+.stage b{color:var(--stamp);margin-right:6px}
+.arrow{color:var(--mute);font-size:18px}
+.stage.loop{box-shadow:inset 0 0 0 2px var(--c2)}
+.mapwrap{position:relative;margin:0 max(4vw,14px);height:min(72vh,780px);min-height:420px;background:var(--panel);border-radius:16px;box-shadow:0 1px 0 var(--line),0 10px 30px -18px #0005;overflow:hidden;touch-action:none}
+#map{position:absolute;inset:0;width:100%;height:100%;cursor:grab;user-select:none}
+#map.drag{cursor:grabbing}
+.zoom{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:44px;padding:0;font-size:20px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--mute);padding:10px max(4vw,14px) 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+#detail{margin:14px max(4vw,14px) 30px;background:var(--panel);border-radius:16px;padding:18px 20px;box-shadow:0 1px 0 var(--line)}
+#detail h2{font-size:20px;margin:2px 0 8px;line-height:1.25}
+#detail .path{font-size:13px;color:var(--mute)}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;margin:2px 6px 2px 0;font-weight:600}
+.tag.n{background:color-mix(in srgb,var(--c1) 14%,transparent);color:var(--c1)}
+.tag.p{background:color-mix(in srgb,var(--prac) 18%,transparent);color:var(--prac)}
+.rel button{min-height:36px;font-size:13px;margin:4px 6px 0 0}
+#detail ul{margin:6px 0 0;padding-left:20px}
+svg text{font-family:"Golos Text",system-ui,sans-serif}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(max-width:600px){.mapwrap{height:64vh}.legend{gap:10px}}
+</style>
+</head>
+<body>
+<header class="band">
+  <h1>E.DW416: нэг баримт бичгийн замаар бүх хичээл</h1>
+  <p class="lead">8 лекц, 32 дэд сэдэв, 16 семинар. Хууль, журам, стандартын заалт бүр шошготой. Зангилаа дээр дарж дэлгэнэ, хурааж хаана. Чирж зөөж, хулганы дугуйгаар томруулна.</p>
+  <div class="tools">
+    <input id="q" type="search" placeholder="Хайх: тушаал, 600dpi, 37.1 …" aria-label="Зураглалаас хайх">
+    <button data-lv="1" aria-pressed="true">Сэдэв</button>
+    <button data-lv="2" aria-pressed="false">Дэд сэдэв</button>
+    <button data-lv="3" aria-pressed="false">Бүгдийг дэлгэх</button>
+    <button id="links" aria-pressed="true">Холбоос харуулах</button>
+    <button id="fit">Төвлөрүүлэх</button>
+  </div>
+  <div class="track" id="track" aria-label="Баримт бичгийн амьдралын мөчлөг"></div>
+</header>
+<div class="mapwrap"><svg id="map" role="img" aria-label="Хичээлийн оюуны зураглал"></svg>
+  <div class="zoom"><button id="zin" aria-label="Томруулах">+</button><button id="zout" aria-label="Жижигрүүлэх">−</button></div></div>
+<div class="legend">
+  <span><i style="background:var(--c1)"></i>Бүлэг 1 · Суурь</span>
+  <span><i style="background:var(--c2)"></i>Бүлэг 2 · Мөчлөг</span>
+  <span><i style="background:var(--c3)"></i>Бүлэг 3 · Архив</span>
+  <span><i style="border:2px dashed var(--mute)"></i>Семинар</span>
+  <span><i style="background:var(--stamp)"></i>Сэдэв хоорондын холбоос</span>
+  <span><span class="tag n">Норматив</span><span class="tag p">Практик</span></span>
+</div>
+<section id="detail" aria-live="polite"></section>
+
+<script>
+{
+/* ---------- DATA ---------- */
+const L=(t,s)=>({t,s,k:'n'}), P=(t,s)=>({t,s:s||'Практик',k:'p'}),
+ S=(t,c)=>({t,k:'sub',c}), SEM=(t)=>({t,k:'sem'}), B=t=>({t,k:'br'});
+const T=(id,t,wk,stage,c)=>({id,t,wk,stage,k:'topic',c});
+const DATA={t:'E.DW416 · Архив, баримт бичигтэй ажиллах арга зүй',k:'root',c:[
+{t:'Бүлэг 1 · Эрх зүйн зохицуулалт ба баримт бичгийн стандарт',k:'ch',col:'--c1',c:[
+ T('c1','Лекц 1 · Баримт бичиг ба эрх зүйн орчин','7 хоног 1–2 · CLO 1, 5','s0',[
+  S('1.1 Баримт бичиг гэж юу вэ',[
+   L('Мэдээлэл тээгчид буулгаж тэмдэглэсэн, стандартаар тогтоосон бүрдлүүдтэй, цахим эсхүл цаасан, албан ёсны баримтжуулсан мэдээлэл','MNS 5140-1:2026 §2.1'),
+   L('Хууль илүү өргөн тодорхойлдог: мэдээлэл тээгчид буулгаж тэмдэглэсэн мэдээлэл','Хууль 4.1.6'),
+   L('Цахим баримт бичиг: мэдээллийн системээр үүсгэх, боловсруулах, хадгалах, илгээх, хүлээн авах мэдээлэл','MNS 5140-1:2026 §2.2'),
+   L('Хуульд өөрөөр заагаагүй бол цахим хэлбэр үндсэн, шаардлагатай бол цаасан','Хууль 37.1 (2024)'),
+   L('Цахим нь цаасныхтай адил хүчинтэй; зөрвөл анх баталгаажсан эх хувийг баримтална','Хууль 38.2'),
+   L('Хуулбарласан бол "хуулбар хувь" тэмдэглэгээ; эх хувьтай нийцвэл хүчинтэй','Хууль 38.3–38.5')]),
+  S('1.2 Эрх зүйн 3 түвшин',[
+   L('Хууль: 7 бүлэг, 51 зүйл; албан хэрэг хөтлөлт = 6-р бүлэг (34–47)','Архив, албан хэрэг хөтлөлтийн тухай хууль'),
+   L('Нийтлэг журам: Засгийн газрын 2024 оны 214-р тогтоол','Хууль 34.2'),
+   L('Стандарт MNS 5140-1, 2, 3:2026, 2026.07.24-нөөс мөрдөнө','СХЗГ С/15'),
+   L('Тамга, тэмдэг, хэвлэмэл хуудасны журам: ЗГ 2021/226 (2025, 2026 оны өөрчлөлттэй)','Хууль 39.3'),
+   L('5 зарчим: нэгдмэл арга зүй · тогтмол бүрэн бүрдүүлэлт · хараат бус · аюулгүй хадгалалт · нээлттэй, шуурхай ашиглалт','Хууль 3.1'),
+   L('Журам бусад байгууллагад "дагаж мөрдөж болно"; стандарт бүх байгууллагад хамаарна','Хууль 34.3 · MNS 5140-1 §1'),
+   L('Мөрдөх бусад хууль: Монгол хэл, Нийтийн мэдээллийн ил тод байдал, Цахим гарын үсэг, Төрийн болон албаны нууц','Журам 1.3')]),
+  S('1.3 3 төрөл, 31 нэр төрөл',[
+   L('Захирамжлал (8): хууль · зарлиг · тогтоол · захирамж · тушаал · шийдвэр · албан даалгавар · албан шаардлага','MNS 5140-1 §3.1'),
+   L('Зохион байгуулалт (17): илгээлт · акт · албан бичиг · зөвлөмж · гэрээ · дүгнэлт · дүрэм · журам · заавар · тайлан · төсөл · тэмдэглэл · удирдамж · хөтөлбөр · төлөвлөгөө · санал · санамж бичиг','MNS 5140-1 §3.2'),
+   L('Мэдээлэл-лавлагаа (6): илтгэл · илтгэх хуудас · мэдэгдэл · тодорхойлолт · мэдээ · танилцуулга','MNS 5140-1 §3.3'),
+   L('Тогтоолыг хамтран хэлэлцэж, тушаалыг эрх бүхий албан тушаалтан батална','MNS 5140-1 §3.1.3, 3.1.5')]),
+  S('1.4 Хэн юу хариуцах вэ',[
+   L('Удирдлага: зохион байгуулах, дотоод журам, хэргийн ба хэвлэмэл хуудасны индекс, гарын үсгийн эрх батлах','Хууль 35.1 · Журам 2.2'),
+   L('Бүтцийн нэгжийн дарга: нэгждээ хэрэгжүүлэх, шийдвэрлэлтийг хянах, "Хуулбар хувь" баталгаажуулах','Хууль 35.2 · Журам 2.3'),
+   L('Ажилтан: стандартаар баримтжуулах, зөв бичих дүрэм, нууцлал, архивт бүрэн шилжүүлэх','Хууль 35.4 · Журам 2.4'),
+   L('Орон тооны бичиг хэргийн ажилтан: хүлээн авах, бүртгэх, дугаар олгох, илгээх, мэдээ тайлан','Хууль 35.3 · Журам 2.5–2.6'),
+   L('БНШК-ыг удирдлага байгуулна','Журам 2.2.12 · Хууль 25')]),
+  SEM('Сем 1 · 31 нэр төрөл, ангиллыг таньж ялгах'),
+  SEM('Сем 2 · estandard.gov.mn, legalinfo.mn-ээс акт хайж ашиглах · Даалгавар 1'),
+  B('→ Баримт бичгийг албан ёсны болгодог зүйл юу вэ? (С2)')]),
+ T('c2','Лекц 2 · Бүрдэл ба хэвлэмэл хуудас','7 хоног 3–4 · CLO 1, 2','s0',[
+  S('2.1 28 бүрдэл (6 бүлэг)',[
+   L('Толгой: 01 Төрийн сүлд, соёмбо · 02 Бэлгэ тэмдэг · 03 Байгууллагын нэр · 04 Нэгжийн нэр · 05 Баримт бичгийн нэр · 06 Хаяг','MNS 5140-2 §4.1'),
+   L('Огноо, дугаар: 07 Он сар өдөр · 08 Бүртгэлийн дугаар · 09 Үйлдсэн газар · 10 Хариутай бичгийн огноо, дугаар · 11 Нууцын зэрэглэл','MNS 5140-2 §4.1'),
+   L('Агуулга: 12 Харилцагч · 13 Тэргүү · 14 Бичвэр · 15 Хавсралт · 16 Хувь илгээсэн','MNS 5140-2 §4.1'),
+   L('Баталгаажуулалт: 17 Гарын үсэг · 18 Тоон гарын үсэг · 19 Тамга, тэмдэг','MNS 5140-2 §4.1'),
+   L('Тэмдэглэл: 20 Боловсруулсан, хянасан · 21 Эрж хайх · 22 Хүлээн авсан · 23 Удирдлагын заалт · 24 Баталсан · 25 Зөвшөөрсөн · 26 Санал өгсөн · 27 Хуулбар хувь · 28 Хуулбар үнэн','MNS 5140-2 §4.1'),
+   P('6 бүлэгт хуваасан нь сургалтын зориулалттай')]),
+  S('2.2 Нэр төрөл × бүрдэл',[
+   L('31 нэр төрөл тус бүрт цаасан ба цахим хэлбэрт орох бүрдлийн жагсаалт','MNS 5140-2 §4.2'),
+   L('Цахим хэлбэрт 17 гарын үсгийн оронд 18 тоон гарын үсэг орно','MNS 5140-2 §4.2'),
+   L('Төрийн сүлд, соёмботой хуудсанд бэлгэ тэмдэг хэрэглэхгүй (01 эсхүл 02)','MNS 5140-2 §5.2'),
+   L('Албан бичгээс бусад баримт бичгийн нэрийг заавал бичнэ','MNS 5140-2 §5.5')]),
+  S('2.3 Хэвлэмэл хуудас',[
+   L('Төвийн байрлал: захирамжлал, зохион байгуулалт, мэдээлэл-лавлагаа, А5 албан бичиг; хажуугийн: А4 албан бичиг','MNS 5140-3 §3.6–3.7'),
+   L('Бүрдэл байрлуулах талбайн зах: дээд А4 10 / А5 5 мм, зүүн 30 мм, баруун 15 мм','MNS 5140-3 §4'),
+   L('Сүлд, соёмбо, бэлгэ тэмдгийн өндөр: А4 21 мм, А5 15 мм','MNS 5140-3 §3.3'),
+   L('Хөх өнгө: PANTONE 19-4150, RGB 17-88-159','MNS 5140-3 §3.5'),
+   L('Байгууллагын нэр Arial 11–12 / Times 12–14 pt; хаяг Arial 8 pt','MNS 5140-3 §3.14'),
+   L('Индекс 10+ оронтой: бүс · салбар · нэр төрөл · дараалал','MNS 5140-3 §3.20'),
+   L('Хэвлэмэл хуудсыг баруун доод өнцөгт (доод 10, баруун 15 мм) дугаарлана','MNS 5140-3 §3.19')]),
+  S('2.4 Бичвэрийн шаардлага',[
+   L('Бичвэр Arial 11–12 / Times 12–14 pt; хүснэгт 9–11 pt; цаасны нэг талд','MNS 5140-2 §5.14.3'),
+   L('А4 зах: дээд 20, доод 20, зүүн 30, баруун 15 мм; мөрийн зай А4 1.15–1.5, А5 1.0','MNS 5140-2 §5.14.3'),
+   L('Догол 1 таб = 6 тэмдэгт; хоёр зах тэгш','MNS 5140-2 §5.14'),
+   L('Огноо 3 хэлбэр: "2025 оны 03 сарын 04 өдөр" · "2025.04.05" · "2025 оны 05 дугаар сарын 08"','MNS 5140-2 §5.7'),
+   L('Дугаар: А/01 үндсэн · Б/01 хүний нөөц · №01/115 албан бичиг','MNS 5140-2 §5.8'),
+   L('Бичвэрийн 8 шаардлага: бүрэн, хоёрдмол утгагүй, оновчтой үг, алдаагүй, албан хэллэг, учир зүйтэй, эх сурвалжтай, нэр зөв','MNS 5140-2 §5.14'),
+   L('Монгол хэлний зөв бичих дүрмийг мөрдөнө','Хууль 35.4.2')]),
+  SEM('Сем 3 · 28 бүрдлийг А4, А5 хэвлэмэл хуудсанд байршуулах · Даалгавар 2'),
+  SEM('Сем 4 · Найруулга: зөв бичих дүрэм, тоо, оноосон нэр'),
+  B('→ Бүрдлүүдээр баримт зохиоё: захирамжлалаас эхэлнэ (С3)')])]},
+{t:'Бүлэг 2 · Баримт бичиг боловсруулах арга зүй ба бүртгэл-хяналт',k:'ch',col:'--c2',c:[
+ T('c3','Лекц 3 · Захирамжлал ба зохион байгуулалтын баримт бичиг','7 хоног 5–6 · CLO 2, 5','s1',[
+  S('3.1 Зохион бүрдүүлэх 5 үе шат',[
+   L('1 Төсөл зохиох → 2 Хянах, зөвшөөрөх → 3 Дугаар олгож бүртгэх → 4 Гарын үсэг зурах → 5 Баталгаажуулах','Журам 3.2'),
+   L('Захирамжлал, зохион байгуулалтын баримтыг кирилл болон монгол бичгээр үйлдэнэ','Журам 3.3'),
+   L('Төсөлд санал авна: хууль эрх зүй, санхүү, хамаарах нэгжээс','Журам 4-р бүлэг')]),
+  S('3.2 Тушаал',[
+   L('Үндэслэл хэсэг + захирамжлах хэсэг ("ТУШААХ нь:")','MNS 5140-2 §5.14.1'),
+   L('Заалт бүр араб тоогоор, захиран тушаах хэлбэрээр; хэн, юу, хугацаа, хяналт','MNS 5140-2 §5.14.1'),
+   L('Тэргүүний 16 үндсэн (А) ба 11 хүний нөөцийн (Б) агуулга','MNS 5140-2 §5.13'),
+   L('Хүний нөөцийн тушаалын эхний заалтад эцэг (эх)-ийн нэр, нэрийг бүтнээр','MNS 5140-2 §5.14.1'),
+   L('Нэг баримт бичгээр нэг асуудал шийдвэрлэнэ','MNS 5140-2 §5.14.1'),
+   L('Ажлын хэсэг: нэг удаагийнх нэрээр, байнгынх албан тушаалаар','MNS 5140-2 §5.14.1'),
+   L('Батлагдсан тушаалыг захирамжлалын баримтын бүртгэлд бүртгэнэ','Журам 4.17')]),
+  S('3.3 Хурлын тэмдэглэл, акт',[
+   L('Тэмдэглэл: хурлын явц, шийдвэрийг асуудал тус бүрээр тэмдэглэсэн баримт','MNS 5140-1 §3.2.12'),
+   L('Акт: бодит байдлын үнэн зөвийг шалгаж нотолсон баримт','MNS 5140-1 §3.2.2'),
+   L('СОНССОН нь → ХЭЛЭЛЦСЭН нь → ШИЙДВЭРЛЭСЭН нь','MNS 5140-2 §5.14.2'),
+   L('Хэлэлцсэн баримт, санал, санал хураалтыг тусгаж хавсаргана','MNS 5140-2 §5.14.2')]),
+  S('3.4 Гэрээ, журам, дүрэм',[
+   L('Гэрээнд 24 баталсан, 26 санал өгсөн тэмдэглэл орно','MNS 5140-2 §4.2'),
+   L('"БАТЛАВ", "ЗӨВШӨӨРСӨН", "САНАЛ ӨГСӨН" тэмдэглэлийн хэлбэр','MNS 5140-2 §5.24–5.26'),
+   L('Бүлэг, зүйлийг "Нэг.Нийтлэг үндэслэл", "1.1." гэж дугаарлана','MNS 5140-2 §5.14.2'),
+   L('Байгууллага өөрийн албан хэрэг хөтлөлтийн журмыг батална','Журам 1.7')]),
+  SEM('Сем 5 · Захирлын тушаал, хурлын тогтоолын төсөл'),
+  SEM('Сем 6 · Гэрээ, дотоод журмын төсөл'),
+  B('→ Дотоод шийдвэр гарлаа; одоо гадагш харилцаж, хянуулах (С4)')]),
+ T('c4','Лекц 4 · Албан бичиг, мэдээлэл-лавлагаа, төслийг хянах','7 хоног 7–8 · CLO 2, 5','s2',[
+  S('4.1 Албан бичиг',[
+   L('Байгууллага хооронд, байгууллага иргэдийн харилцсан баримт','MNS 5140-1 §3.2.3'),
+   L('Харилцагч: том үсгээр, товчлохгүй, "… ТАНАА" эсхүл "… -Д"','MNS 5140-2 §5.12'),
+   L('Олон байгууллагад: тус бүрд нэг нэр; жагсаалтыг үлдэх хувьд хавсаргана','MNS 5140-2 §5.12'),
+   L('Хариутай бичиг: "Танай 2026.04.28-ны № 01/105-т"','MNS 5140-2 §5.10'),
+   L('А5 болон гадаадад илгээх албан бичигт тэргүү бичихгүй','MNS 5140-2 §5.13')]),
+  S('4.2 Тодорхойлолт, илтгэх хуудас, танилцуулга',[
+   L('Тодорхойлолт: үнэн зөвийг баримтад үндэслэн нотолно; 06 хаяг, 12 харилцагч орно','MNS 5140-1 §3.3.4 · 5140-2 §4.2'),
+   L('Илтгэх хуудас: явц, үр дүнгийн дүгнэлт, саналыг танилцуулна; 23 удирдлагын заалт орно','MNS 5140-1 §3.3.2 · 5140-2 §4.2'),
+   L('Танилцуулга: шийдвэр, байгууллага, үйл ажиллагааг тодорхой илэрхийлнэ','MNS 5140-1 §3.3.6')]),
+  S('4.3 Хянах, баталгаажуулах',[
+   L('Ажилтан агуулга, тоо баримт, найруулгын үнэн зөвийг биечлэн хариуцна','Журам 2.4.2'),
+   L('"Боловсруулсан, хянасан" тэмдэг 25×110 мм, сүүлийн хуудасны ар','MNS 5140-2 §5.20 · Журам хавсралт 1'),
+   L('Цахимыг цахим гарын үсгээр, цаасыг гарын үсэг + тамгаар','Журам 2.2.7'),
+   L('Тамгыг гарын үсгийг оролцуулан бүрэн, тод, тэгш дарна','MNS 5140-2 §5.19')]),
+  S('4.4 Удирдлагын заалт',[
+   L('Цохолт: хариуцах ажилтан, үүргийн товч утга, хугацаа, гарын үсэг, огноо','MNS 5140-2 §5.23'),
+   L('Бичиг хэрэгт бүртгэгдээгүй баримтыг удирдлагад танилцуулахыг хориглоно','Хууль 42.5')]),
+  SEM('Сем 7 · Илтгэх хуудас, тодорхойлолт үйлдэх'),
+  SEM('Сем 8 · Төслийг хянах, засварлах · Даалгавар 3'),
+  B('→ Баримт баталгаажлаа; одоо бүртгэж, хөдөлгөж, хянах (С5)')]),
+ T('c5','Лекц 5 · Баримт бичгийн эргэлт: бүртгэл, хяналт','7 хоног 9–10 · CLO 3','s3',[
+  S('5.1 Ирсэн баримт',[
+   L('Хүлээн авах → бүртгэх → удирдлагад → цохолт → шийдвэрлүүлэх → хяналт → хариу → хэрэгт хадгалах','Журам 4.4'),
+   L('Буцаах: хаяг, нэр буруу, хавсралт дутуу; хугацаа зөрүүтэй; чиг үүрэгт хамааралгүй','Журам 4.5'),
+   L('Хүлээн авсан тухай тэмдэг (22) 50×40 мм, зүүн доод','MNS 5140-2 §5.22'),
+   L('Ирсэн бичгийн бүртгэл; албаны цахим шуудангаар ирсэн бүртгэл','Журам хавсралт 6, 10')]),
+  S('5.2 Явуулах ба дотоод баримт',[
+   L('Удирдлага зөвшөөрсөн баримтад бичиг хэрэг дугаар олгож, илгээнэ','Журам 2.5.2–2.5.3'),
+   L('Явуулсан баримтын бүртгэл; захирамжлалын баримтын бүртгэл','Журам хавсралт 11, 12'),
+   L('Хариутай бичигт оны эхнээс "хариутай" дугаар өгч хянана','Журам 4.14.3')]),
+  S('5.3 Шийдвэрлэлтэд хяналт',[
+   L('Хугацааг сунгавал хуанлийн 30 хүртэл өдөр, илгээгчид мэдэгдэнэ','Журам 5.7'),
+   L('Хугацаа хэтэрсэн, хариу ирээгүй мэдээ 7 хоног тутам; шийдвэрлэлтийн мэдээ сард 1','Журам 2.6.1–2.6.2'),
+   L('Зохион байгуулалтын мэдээ улиралд 1; эргэлт, хэвлэмэл хуудасны мэдээ жилд 2','Журам 2.6.3–2.6.4'),
+   L('Яаралтай асуудал ажлын 3 өдөрт, бусад нь ажлын 7 өдөрт','Хууль 43.1')]),
+  S('5.4 Эргэлтийн хэмжээ',[
+   L('А4 нэг нүүр = 1 нэгж · А5 хоёр нүүр = 1 · А3 нэг нүүр = 2','Журам 4.22'),
+   L('Цахим баримтыг тоо бүртгэлд харгалзан тооцно','Журам 4.23'),
+   L('Баримт бичгийн эргэлтийн мэдээ','Журам хавсралт 13')]),
+  SEM('Сем 9 · Ирсэн, явуулсан баримт бичгийг бүртгэх · Даалгавар 4'),
+  SEM('Сем 10 · Шийдвэрлэлтэд хяналт, эргэлтийн хэмжээ'),
+  B('→ Шийдвэрлэгдсэн баримт хаашаа очих вэ? → хэрэгт, дараа нь архивт (С6)')])]},
+{t:'Бүлэг 3 · Архив бүрдүүлэлт, цахимжуулалт ба хадгалалт',k:'ch',col:'--c3',c:[
+ T('c6','Лекц 6 · Хэргийн жагсаалт, хэрэг бүрдүүлэх, архивт шилжүүлэх','7 хоног 11–12 · CLO 1, 4','s4',[
+  S('6.1 Хөтлөх хэргийн нэрийн жагсаалт',[
+   L('Тухайн жилд хөтлөгдөх хэргийн нэр, хадгалах хугацааг тогтоосон жагсаалт','Хууль 4.1.12'),
+   L('Бичиг хэрэг нэгжүүдтэй хамтран боловсруулж БНШК-оор хэлэлцүүлнэ','Журам 2.5.6'),
+   L('Хэргийн индексийг удирдлага батална; нэгж бүрд 1-ээс дугаарлана','Журам 2.2.3 · 6.6–6.7'),
+   L('Жагсаалтын эцэст хэргийг хадгалах хугацаагаар ангилж тоо, үсгээр дүгнэнэ','Журам 6.17')]),
+  S('6.2 Хадгалах хугацаа ба үнэ цэнэ',[
+   L('Үлгэрчилсэн болон салбарын жагсаалт (АЕГ А/91, 2023)','А/91 зааврын 1.4–1.5'),
+   L('Байнга · 70 жил · түр; "НШ" тэмдэглэгээ','А/91'),
+   L('Үнэ цэнийг нягтлан шалгах: хадгалах хугацаа тогтоох, баримт сонгох','Хууль 4.1.8'),
+   L('Эх хувийг арга зүйн комиссын зөвшөөрөлгүй устгахыг хориглоно','Хууль 36.3')]),
+  S('6.3 Хадгаламжийн нэгж бүрдүүлэх',[
+   L('Ангилсан, тусдаа хадгалагдах, бүртгэлийн дугаартай нэг буюу хэд хэдэн баримт','Хууль 4.1.3'),
+   L('Баталгааны хуудас, дотоод товьёг','Архивын журам, хавсралт 7'),
+   L('Цахим баримтын 1 хадгаламжийн нэгж = 1 хавтас (folder)','Архивын журам 9.8.7'),
+   L('Шийдвэрлэсэн баримтаар 30 өдөрт хэрэг бүрдүүлж архивт шилжүүлнэ','Журам 6.19.3')]),
+  S('6.4 Архивт шилжүүлэх',[
+   L('Ажилтан баримтыг архивт бүрэн бүрдэлтэй шилжүүлнэ','Хууль 35.4.7'),
+   L('Байгууллагын архивын 10 чиг үүрэг: хүлээн авах, нягтлах, цэгцлэх, хадгалах, тоо бүртгэл, цахимжуулах, ашиглуулах…','Хууль 23.2'),
+   L('Хадгаламжийн нэгжийн бүртгэл (байнга, түр, 70 жил), устгах жагсаалт, хүлээн авсан акт','Архивын журам, хавсралт 1–4, 34')]),
+  SEM('Сем 11 · Хөтлөх хэргийн нэрийн жагсаалт, индекс'),
+  SEM('Сем 12 · Үлгэрчилсэн жагсаалтаар хадгалах хугацаа тогтоох'),
+  B('→ Архив зөвхөн цаас биш: хууль цахимыг үндсэн гэжээ (С7)')])]},
+]};
+/* Бүлэг 3-ын үргэлжлэл */
+DATA.c[2].c.push(
+ T('c7','Лекц 7 · Цахим албан хэрэг хөтлөлт, баталгаажуулалт','7 хоног 13–14 · CLO 4, 5','loop',[
+  S('7.1 Цахим албан хэрэг хөтлөлт',[
+   L('Цахим албан хэрэг хөтлөлт','Хууль 47'),
+   L('Мэдээллийн системд тавих шаардлага','Журам 214, 7-р бүлэг'),
+   L('Цахим баримтыг мэдээллийн санд төвлөрүүлж хадгална','Архивын журам 8.3')]),
+  S('7.2 Цаасан баримтыг цахимжуулах',[
+   L('Цахимжуулах баримтын жагсаалтыг БНШК-оор хэлэлцүүлнэ; ажилтантай нууцын гэрээ','Архивын журам 8.4–8.5'),
+   L('Бэлтгэл: нягтлан шалгах, засварлах, үдээс салгах, цэвэрлэх, хавтас (folder) үүсгэх','Архивын журам 8.6'),
+   L('Бүх хуудас, товьёг, баталгааны хуудсыг хуулбарлах; дэс дараалал, фокус алдаагүй','Архивын журам 8.7'),
+   L('Нягтрал 600 dpi-аас багагүй; цаасыг PDF, зургийг JPEG/PNG, дууг mp3 256kbps, бичлэгийг mp4 360p','Архивын журам 8.7.5 · 8.8'),
+   L('Цахим хэлбэрт шилжүүлсэн баримтын бүртгэл','Архивын журам, хавсралт 18')]),
+  S('7.3 Цахим ба тоон гарын үсэг',[
+   L('Цахим гарын үсгийн тухай хууль (2021, шинэчилсэн найруулга)','ЦГҮ хууль'),
+   L('Тоон гарын үсэг: эзэмшигчийг таних, баталгаажуулсны дараах өөрчлөлтийг илрүүлэх, элементүүд тод','MNS 5140-2 §5.18'),
+   L('Цахим баримтыг цахим тамга, тоон гарын үсгээр баталгаажуулна','MNS 5140-2 §5.19')]),
+  S('7.4 Эх хувь ба хуулбар',[
+   L('"Хуулбар хувь" QR, 70×40 мм','MNS 5140-2 §5.27 · Журам хавсралт 2'),
+   L('"Хуулбар үнэн" зөвхөн архивын баримтаас хуулбарлахад, 70×40 мм','MNS 5140-2 §5.28'),
+   L('Эх хувь хүчингүй болбол хуулбар хувь мөн хүчингүй','Хууль 38.5')]),
+  SEM('Сем 13 · Цахимжуулахад бэлтгэх, сканердах, PDF болгож нэрлэх'),
+  SEM('Сем 14 · Тоон гарын үсэг, цахим баримтыг баталгаажуулах · Даалгавар 5'),
+  B('→ Цаасан ч, цахим ч баримтыг хадгалж, ашиглуулж, хамгаална (С8)')]),
+ T('c8','Лекц 8 · Хадгалалт, ашиглалт, нууцлал, ёс зүй','7 хоног 15–16 · CLO 4, 5','s5',[
+  S('8.1 Хадгалалт, хамгаалалт',[
+   L('Цаасан баримтад дулаан +14…+19 °C, харьцангуй чийг 50–55%','Архивын журам · MNS 6929-2 §4.9'),
+   L('Чийг, дулаан хэмжигчийг 100 м³ тутамд нэг','MNS 6929-2 §4.10'),
+   L('Тавиурын зай: хана хүртэл 75, хооронд 75, голын гарц 120, шал хүртэл 30-аас багагүй см','Архивын журам 6.17'),
+   L('Гэмтэл үүссэн баримтын бүртгэл','Архивын журам 6.16, хавсралт 32'),
+   L('Тооллого','Архивын журам, 7-р бүлэг · хавсралт 26–27'),
+   L('Модон тавиур, шүүгээ хэрэглэхийг хориглоно','MNS 6929-2 §8.3')]),
+  S('8.2 Ашиглалт',[
+   L('Архивын баримтын ашиглалт','Хууль 30 · Архивын журам, 10-р бүлэг'),
+   L('Лавлагаа, хуулбар олгосон бүртгэл; захиалгын хуудас; үйлчлүүлэгчийн карт','Архивын журам, хавсралт 21–22, 29–30'),
+   L('Албан хэрэгцээнд 30 хүртэл хоногоор баримт олгоно','Архивын журам 10.26')]),
+  S('8.3 Нууцлал',[
+   L('Нууцын тэмдэглэл: хуудас бүрийн баруун дээд, дээд 10, баруун 15 мм','MNS 5140-2 §5.11'),
+   L('Ажилтан албан баримт, мэдээллийн нууцлалыг хадгална','Хууль 35.4.6 · Журам 2.4.5'),
+   L('Нууц албан хэрэг хөтлөлтийг Төрийн болон албаны нууцын тухай хуулиар','Журам 1.5'),
+   L('Хүний хувийн мэдээлэл хамгаалах тухай хууль (2021, 2022.05.01-нөөс)','ХХМХ хууль')]),
+  S('8.4 Ёс зүй ба хариуцлага',[
+   L('Ёс зүйн дүрэм баримтлах; хориглох 6 зүйл (нууц задруулах, хуурамч лавлагаа…)','Хууль 48.1–48.2'),
+   L('Архивын үйл ажиллагаанд хориглох 11 зүйл','Архивын журам 14.1'),
+   L('Зөрчилд Төрийн албаны, Эрүүгийн, Зөрчлийн хуулиар хариуцлага','Хууль 50')]),
+  SEM('Сем 15 · Хувийн цахим архив, суурь архив'),
+  SEM('Сем 16 · Бүтээлийн санг үнэлж хамгаалах')]));
+
+/* Сэдэв хоорондын холбоос: [эх, зорилго, тайлбар] (дэд сэдвийн гарчгаар) */
+const LINKS=[
+ ['1.1','7.4','Хуулбар хувь: хууль 38.3 → стандарт §5.27'],['1.1','7.1','Цахим хэлбэр үндсэн (37.1) → цахим албан хэрэг'],
+ ['1.3','2.2','31 нэр төрөл → бүрдлийн матриц'],['2.1','2.2','28 бүрдэл → нэр төрөл бүрт'],
+ ['1.4','6.1','БНШК → хэргийн жагсаалт хэлэлцэх'],['1.4','8.4','Хууль 48.2 → ёс зүй'],
+ ['2.4','5.2','Огноо, дугаарын хэлбэр → дугаар олгох'],['3.1','5.2','3-р үе шат "дугаар олгож бүртгэх"'],
+ ['3.2','5.2','Тушаал → захирамжлалын бүртгэл'],['4.3','7.3','Гарын үсэг → тоон гарын үсэг'],
+ ['5.1','6.1','Шийдвэрлэсэн баримт → хэрэгт'],['6.4','8.1','Архивт шилжсэн → хадгалалт'],
+ ['2.1','8.3','11 Нууцын зэрэглэл → нууцлал'],['6.3','7.2','Хадгаламжийн нэгж → цахимжуулах']];
+
+const STAGES=[['s0','Суурь','Л1–Л2'],['s1','Үүсгэх','Л3'],['s2','Харилцах, баталгаажуулах','Л4'],['s3','Бүртгэх, шийдвэрлэх','Л5'],['s4','Хэрэг бүрдүүлж архивлах','Л6'],['s5','Хадгалах, ашиглах','Л8'],['loop','Цахим — бүх шатанд','Л7']];
+
+/* ---------- MODEL ---------- */
+let uid=0;const byId={},bySub={};
+(function prep(n,p,d,col){n.uid=uid++;n.p=p;n.d=d;n.col=n.col||col;byId[n.uid]=n;
+ n.open=d<2;
+ if(n.k==='sub')bySub[n.t.split(' ')[0]]=n;(n.c||[]).forEach(c=>prep(c,n,d+1,n.col))})(DATA,null,0,'--c1');
+
+/* ---------- TEXT MEASURE ---------- */
+const cv=document.createElement('canvas').getContext('2d');
+const ST={root:[19,700,230,24],ch:[15,700,230,20],topic:[15,700,240,20],sub:[14,600,250,19],sem:[13.5,500,250,18],br:[13,500,250,18],n:[13,400,300,17],p:[13,400,300,17]};
+function wrap(n){const[fs,fw,mw,lh]=ST[n.k];cv.font=`${fw} ${fs}px "Golos Text",system-ui`;
+ const words=n.t.replace(/\*/g,'').split(' ');const lines=[];let cur='';
+ for(const w of words){const t=cur?cur+' '+w:w;if(cv.measureText(t).width>mw&&cur){lines.push(cur);cur=w}else cur=t}
+ if(cur)lines.push(cur);n.lines=lines;
+ n.w=Math.min(mw,Math.max(...lines.map(l=>cv.measureText(l).width)))+24;
+ n.h=lines.length*lh+(n.s?20:0)+14}
+
+/* ---------- LAYOUT ---------- */
+const GAP=10,COL=[0,0,0,0,0];
+function vis(n){return n.open&&n.c?n.c:[]}
+function layout(){
+ const all=[];(function w(n){wrap(n);all.push(n);vis(n).forEach(w)})(DATA);
+ const cw=[];all.forEach(n=>cw[n.d]=Math.max(cw[n.d]||0,n.w));
+ const xs=[0];for(let i=1;i<cw.length;i++)xs[i]=xs[i-1]+cw[i-1]+56;
+ let y=0;
+ (function place(n){n.x=xs[n.d];const ch=vis(n);
+  if(!ch.length){n.y=y;y+=n.h+GAP+(n.d<=2?8:0);return}
+  ch.forEach(place);const a=ch[0],b=ch[ch.length-1];
+  n.y=Math.max((a.y+a.h/2+b.y+b.h/2)/2-n.h/2, 0);
+  if(n.y+n.h+GAP>y)y=n.y+n.h+GAP})(DATA);
+ return all}
+
+/* ---------- RENDER ---------- */
+const svg=document.getElementById('map');let view={x:20,y:20,k:.8};let showLinks=true,hit=new Set(),sel=null;
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fillOf(n){if(n.k==='root')return'var(--ink)';if(n.k==='ch'||n.k==='topic')return`var(${n.col})`;return'var(--panel)'}
+function render(){
+ const all=layout();let h='';
+ /* tree edges */
+ all.forEach(n=>vis(n).forEach(c=>{const x1=n.x+n.w,y1=n.y+n.h/2,x2=c.x,y2=c.y+c.h/2,m=(x1+x2)/2;
+  h+=`<path d="M${x1},${y1}C${m},${y1} ${m},${y2} ${x2},${y2}" fill="none" stroke="var(${n.col})" stroke-opacity=".45" stroke-width="${n.d<2?2.4:1.4}"/>`}));
+ /* cross links */
+ if(showLinks)LINKS.forEach(([a,b,t])=>{const A=bySub[a],Bn=bySub[b];if(!A||!Bn||A.x==null||Bn.x==null||!onScreen(A)||!onScreen(Bn))return;
+  const x1=A.x+A.w,y1=A.y+A.h/2,x2=Bn.x+Bn.w,y2=Bn.y+Bn.h/2,bx=Math.max(x1,x2)+60+Math.abs(y2-y1)*.08;
+  h+=`<path d="M${x1},${y1}C${bx},${y1} ${bx},${y2} ${x2},${y2}" fill="none" stroke="var(--stamp)" stroke-width="1.6" stroke-dasharray="5 5" opacity=".75"><title>${esc(t)}</title></path>`});
+ /* nodes */
+ all.forEach(n=>{const solid=n.k==='root'||n.k==='ch'||n.k==='topic';const tc=solid?'#fff':'var(--ink)';
+  const[fs,fw,,lh]=ST[n.k];const stroke=n.k==='sem'?`stroke="var(--mute)" stroke-dasharray="4 4"`:n.k==='br'?`stroke="var(${n.col})" stroke-dasharray="2 3"`:solid?'':`stroke="var(${n.k==='p'?'--prac':n.col})" stroke-opacity="${n.k==='sub'?1:.5}"`;
+  const on=hit.has(n.uid),isSel=sel===n;
+  h+=`<g class="nd" data-u="${n.uid}" tabindex="0" style="cursor:pointer">`;
+  if(on||isSel)h+=`<rect x="${n.x-4}" y="${n.y-4}" width="${n.w+8}" height="${n.h+8}" rx="12" fill="none" stroke="var(--stamp)" stroke-width="3"/>`;
+  h+=`<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="9" fill="${fillOf(n)}" ${stroke} stroke-width="1.2"/>`;
+  n.lines.forEach((l,i)=>h+=`<text x="${n.x+12}" y="${n.y+8+lh*(i+.78)}" font-size="${fs}" font-weight="${fw}" fill="${n.k==='br'?`var(${n.col})`:tc}" ${n.k==='br'?'font-style="italic"':''}>${esc(l)}</text>`);
+  if(n.s){const pr=n.k==='p';h+=`<text x="${n.x+12}" y="${n.y+n.h-9}" font-size="11.5" font-weight="600" fill="var(${pr?'--prac':'--c1'})">${pr?'◆ ':'§ '}${esc(n.s)}</text>`}
+  if(n.c&&n.k!=='root'){const cx=n.x+n.w,cy=n.y+n.h/2;h+=`<circle cx="${cx}" cy="${cy}" r="9" fill="var(--panel)" stroke="var(${n.col})" stroke-width="1.5"/><text x="${cx}" y="${cy+4.5}" font-size="13" font-weight="700" text-anchor="middle" fill="var(${n.col})">${n.open?'−':'+'}</text>`}
+  h+='</g>'});
+ svg.innerHTML=`<g id="vp" transform="translate(${view.x},${view.y}) scale(${view.k})">${h}</g>`}
+function onScreen(n){let p=n.p;while(p){if(!p.open)return false;p=p.p}return true}
+const vp=()=>svg.querySelector('#vp');
+function apply(){vp()?.setAttribute('transform',`translate(${view.x},${view.y}) scale(${view.k})`)}
+function fit(){const all=layout();const W=svg.clientWidth,H=svg.clientHeight;
+ const mx=Math.max(...all.map(n=>n.x+n.w))+40,my=Math.max(...all.map(n=>n.y+n.h))+20;
+ view.k=Math.max(.3,Math.min(1.1,Math.min(W/mx,H/my)));view.x=16;view.y=Math.max(10,(H-my*view.k)/2);render()}
+function focus(n){render();const W=svg.clientWidth,H=svg.clientHeight;view.k=Math.max(view.k,.85);
+ view.x=W*.32-(n.x)*view.k;view.y=H/2-(n.y+n.h/2)*view.k;apply()}
+
+/* ---------- DETAIL ---------- */
+const det=document.getElementById('detail');
+function path(n){const a=[];let p=n.p;while(p&&p.k!=='root'){a.unshift(p.t);p=p.p}return a.join(' › ')}
+function showDetail(n){sel=n;const sub=n.k==='sub'?n:(n.p&&n.p.k==='sub'?n.p:null);
+ const code=sub?sub.t.split(' ')[0]:null;
+ const rel=code?LINKS.filter(l=>l[0]===code||l[1]===code):[];
+ const kids=(n.c||[]);
+ det.innerHTML=`<div class="path">${esc(path(n))}</div><h2>${esc(n.t.replace(/\*/g,''))}</h2>
+${n.s?`<span class="tag ${n.k==='p'?'p':'n'}">${n.k==='p'?'Практик':'Норматив'} · ${esc(n.s)}</span>`:''}
+ ${n.k==='topic'?`<p>${esc(DATA_TOPIC_W[n.id]||'')}</p>`:''}
+ ${kids.length?`<ul>${kids.map(c=>`<li>${esc(c.t.replace(/\*/g,''))}${c.s?` <span class="tag ${c.k==='p'?'p':'n'}">${esc(c.s)}</span>`:''}</li>`).join('')}</ul>`:''}
+ ${rel.length?`<div class="rel"><b>Холбоотой:</b><br>${rel.map(l=>{const o=l[0]===code?l[1]:l[0];return`<button data-go="${o}">${esc(bySub[o].t)} — ${esc(l[2])}</button>`}).join('')}</div>`:''}`;
+ det.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const t=bySub[b.dataset.go];openTo(t);t.open=true;showDetail(t);focus(t)})}
+const DATA_TOPIC_W={};(function w(n){if(n.k==='topic')DATA_TOPIC_W[n.id]=n.wk;(n.c||[]).forEach(w)})(DATA);
+function openTo(n){let p=n.p;while(p){p.open=true;p=p.p}}
+
+/* ---------- INTERACTION ---------- */
+let drag=null,moved=false;const pts=new Map();
+svg.addEventListener('pointerdown',e=>{pts.set(e.pointerId,e);svg.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};moved=false;svg.classList.add('drag')});
+svg.addEventListener('pointermove',e=>{if(!drag)return;
+ if(pts.size===2){const[a,b]=[...pts.values()];const d0=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);pts.set(e.pointerId,e);const[c,d]=[...pts.values()];const d1=Math.hypot(c.clientX-d.clientX,c.clientY-d.clientY);if(d0)zoomAt((c.clientX+d.clientX)/2,(c.clientY+d.clientY)/2,d1/d0);moved=true;return}
+ const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>4)moved=true;view.x=drag.vx+dx;view.y=drag.vy+dy;apply()});
+const up=e=>{pts.delete(e.pointerId);svg.classList.remove('drag');
+ if(!moved){const g=document.elementFromPoint(e.clientX,e.clientY)?.closest('.nd');if(g)toggle(byId[g.dataset.u])}
+ if(!pts.size)drag=null};
+svg.addEventListener('pointerup',up);svg.addEventListener('pointercancel',e=>{pts.delete(e.pointerId);drag=null});
+function zoomAt(cx,cy,f){const r=svg.getBoundingClientRect(),x=cx-r.left,y=cy-r.top;const k=Math.max(.25,Math.min(2.2,view.k*f));
+ view.x=x-(x-view.x)*k/view.k;view.y=y-(y-view.y)*k/view.k;view.k=k;apply()}
+svg.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.clientX,e.clientY,e.deltaY<0?1.12:1/1.12)},{passive:false});
+svg.addEventListener('keydown',e=>{const g=e.target.closest?.('.nd');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggle(byId[g.dataset.u])}});
+function toggle(n){if(n.c&&n.k!=='root')n.open=!n.open;showDetail(n);if(n.open&&n.c&&n.k!=='root'){const W=svg.clientWidth;render();const k=view.k;view.x=Math.min(view.x,W*.28-n.x*k);view.y=svg.clientHeight/2-(n.y+n.h/2)*k;apply()}else render()}
+document.getElementById('zin').onclick=()=>{const r=svg.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,1.2)};
+document.getElementById('zout').onclick=()=>{const r=svg.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,1/1.2)};
+const lvBtns=[...document.querySelectorAll('[data-lv]')];
+function level(lv){lvBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.lv==lv));hit.clear();
+ Object.values(byId).forEach(n=>n.open=lv==3||n.d<2||(lv==2&&n.k==='topic'));fit()}
+lvBtns.forEach(b=>b.onclick=()=>level(+b.dataset.lv));
+document.getElementById('fit').onclick=fit;
+const lb=document.getElementById('links');lb.onclick=()=>{showLinks=!showLinks;lb.setAttribute('aria-pressed',showLinks);render()};
+document.getElementById('q').addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();hit.clear();
+ if(q.length<2){render();return}
+ const f=Object.values(byId).filter(n=>(n.t+' '+(n.s||'')).toLowerCase().includes(q));
+ f.forEach(n=>{hit.add(n.uid);openTo(n)});render();if(f[0]){showDetail(f[0]);focus(f[0])}});
+
+/* stage track */
+const tr=document.getElementById('track');
+tr.innerHTML=STAGES.map((s,i)=>`${i&&s[0]!=='loop'?'<span class="arrow">→</span>':''}${s[0]==='loop'?'<span class="arrow">⟲</span>':''}<button class="stage ${s[0]==='loop'?'loop':''}" data-s="${s[0]}"><b>${s[2]}</b>${s[1]}</button>`).join('');
+tr.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{const ts=Object.values(byId).filter(n=>n.k==='topic'&&n.stage===b.dataset.s);
+ hit.clear();ts.forEach(t=>{t.open=true;openTo(t);hit.add(t.uid)});showDetail(ts[0]);focus(ts[0])});
+
+addEventListener('resize',()=>apply());
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{fit();showDetail(DATA.c[0].c[0])});
+}
+</script>
+</body>
+</html>

@@ -348,3 +348,66 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   #view-docs .chapter-tabs { flex-direction: row; }
   #view-docs .chapter-tab { padding: 8px 4px; flex-direction: column; font-size: 13px; }
 }
+
+/* ===================== Шинэ хэсгүүд (Лекц, Семинар, Эрх зүйн сан, Зураглал) ===================== */
+
+.view-switch { flex-wrap: wrap; }
+.layout.single { display: block; }
+
+.topic-section ol { margin: 0; padding-left: 22px; }
+.topic-section li { margin: 2px 0; }
+
+.note {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+}
+
+/* Гол ойлголт */
+.concepts { margin: 0; display: grid; gap: 10px; }
+.concepts dt { font-weight: 600; }
+.concepts dd { margin: 0; }
+.concepts .ref, .law-meta, .law-note { color: var(--muted); font-size: 14px; }
+
+/* Хүснэгт */
+.table-wrap { overflow-x: auto; margin: 8px 0 12px; }
+table.data { border-collapse: collapse; width: 100%; font-size: 15px; }
+table.data th, table.data td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+table.data th { background: var(--accent-soft); font-weight: 600; }
+@media (max-width: 600px) {
+  table.data thead { display: none; }
+  table.data tr { display: block; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; padding: 6px 0; }
+  table.data td { display: block; border: 0; padding: 4px 10px; }
+  table.data td::before { content: attr(data-l); display: block; font-size: 12px; color: var(--muted); font-weight: 600; }
+}
+
+/* Эрх зүйн акт */
+.laws { list-style: none; padding: 0 !important; margin: 0; display: grid; gap: 10px; }
+.law { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+.law-top { display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
+.law-title { font-weight: 600; }
+.law a { font-size: 15px; color: var(--accent); }
+.law-used { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.status { flex: none; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; white-space: nowrap; }
+.status.ok { background: var(--ok-soft); color: var(--ok); }
+.status.warn { background: var(--warn-soft); color: var(--warn); }
+.status.bad { background: var(--bad-soft); color: var(--bad); }
+.muted { color: var(--muted); font-size: 14px; }
+
+/* Товч */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--accent); background: transparent; color: var(--accent); border-radius: 99px; padding: 6px 12px; text-align: left; }
+.chip.small { padding: 0 10px; font-size: 13px; }
+.chip:hover { background: var(--accent-soft); }
+.linklike { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-size: inherit; }
+
+/* Зураглал */
+.map-frame { width: 100%; height: 82vh; min-height: 520px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+
+.site-footer { max-width: 1100px; margin: 0 auto; padding: 8px 16px 24px; color: var(--muted); font-size: 13px; }
+.site-footer p { margin: 2px 0; }
+
+/* Grid-ийн багана өргөн контентоор тэлэхгүй байх */
+.layout > * { min-width: 0; }
+.topic { overflow-wrap: break-word; }
