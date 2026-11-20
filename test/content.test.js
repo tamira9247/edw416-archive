@@ -51,3 +51,44 @@ test("Текстэд «» хашилт байхгүй", () => {
     assert.ok(!/[«»]/.test(src), f);
   });
 });
+
+// mongol_tsegtslal.md-ийн машинаар шалгаж болох дүрмүүд.
+// Кодын зэрэгцүүлэлт тоологдохгүйн тулд эх кодыг биш, өгөгдлийн текстийг шалгана.
+vm.runInNewContext(fs.readFileSync(path.join(__dirname, "..", "docs-data.js"), "utf8"), ctx);
+
+// Объект доторх бүх текстийг байршлынх нь хамт цуглуулна
+function texts(obj, where, out = []) {
+  if (typeof obj === "string") out.push([where, obj]);
+  else if (obj && typeof obj === "object")
+    Object.entries(obj).forEach(([k, v]) => texts(v, where + "." + k, out));
+  return out;
+}
+const ALL = texts({ COURSE, SEMINARS, LAWS, MNS: ctx.window.MNS }, "");
+
+// Дүрэм зөрчсөн текстүүдийг "байршил: хэсэг" хэлбэрээр буцаана
+function broken(re) {
+  return ALL.filter(([, s]) => re.test(s)).map(([w, s]) => w + ": " + s.match(re)[0]);
+}
+
+test("Цэг таслал: давхар зай байхгүй", () => {
+  assert.deepEqual(broken(/\S {2,}\S/), []);
+});
+
+// "( )" нь хаалт тэмдгийг өөрийг нь нэрлэсэн тул тооцохгүй
+test("Цэг таслал: хаалтын дотор талд зай байхгүй", () => {
+  assert.deepEqual(broken(/.{0,10}(\( (?!\))|(?<!\() \)).{0,10}/), []);
+});
+
+test("Цэг таслал: . , ? ! : ; тэмдгийн өмнө зай байхгүй", () => {
+  assert.deepEqual(broken(/.{0,10}\S [.,?!:;](\s|$).{0,10}/), []);
+});
+
+// Маягтын бөглөх зай (" .. ", "А/..") тооцохгүй, үгийн араас ".." орсныг л шалгана
+test("Цэг таслал: давхар цэг байхгүй", () => {
+  assert.deepEqual(broken(/.{0,10}[^\s\/.]\.\.(\s|$).{0,10}/), []);
+});
+
+test("Цэг таслал: нээсэн хашилт бүр хаагдсан", () => {
+  const odd = ALL.filter(([, s]) => (s.match(/"/g) || []).length % 2 === 1);
+  assert.deepEqual(odd.map(([w]) => w), []);
+});
