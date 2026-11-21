@@ -14,7 +14,11 @@ const { COURSE, SEMINARS } = ctx.window;
 // localStorage-ийн оронд хэрэглэх энгийн сан
 function memory(initial) {
   const data = Object.assign({}, initial);
-  return { getItem: (k) => (k in data ? data[k] : null), setItem: (k, v) => { data[k] = String(v); } };
+  return {
+    getItem: (k) => (k in data ? data[k] : null),
+    setItem: (k, v) => { data[k] = String(v); },
+    removeItem: (k) => { delete data[k]; }
+  };
 }
 const broken = { getItem: () => { throw new Error("хаалттай"); }, setItem: () => { throw new Error("хаалттай"); } };
 
@@ -60,4 +64,36 @@ test("7. 1-р лекц, түүний 2 семинарыг уншвал 1-р бү
   assert.equal(s.done, 3);
   assert.deepEqual(Array.from(s.chapters, (c) => c.done), [3, 0, 0]);
   assert.equal(s.percent, 13);
+});
+
+// ---------- Feature №8: Supabase ----------
+
+test("8. Баазын мөрүүдийг явц болгоно, давхардсан, танихгүй мөрийг алгасна", () => {
+  const p = P.fromRows([
+    { kind: "lecture", item_id: 1 },
+    { kind: "seminar", item_id: 3 },
+    { kind: "lecture", item_id: 1 },
+    { kind: "quiz", item_id: 2 },
+    { kind: "lecture", item_id: "4" }
+  ]);
+  assert.deepEqual(p, { lectures: [1], seminars: [3] });
+  assert.deepEqual(P.fromRows(null), P.empty());
+});
+
+test("9. Нэгтгэл: зөвхөн баазад байхгүй, одоо байгаа лекц, семинарыг нэмнэ", () => {
+  const valid = { lectures: [1, 2, 3, 4, 5, 6, 7, 8], seminars: Array.from({ length: 16 }, (_, i) => i + 1) };
+  const local = { lectures: [1, 2, 99], seminars: [5] };
+  const remote = { lectures: [2], seminars: [] };
+  assert.deepEqual(P.missing(local, remote, valid), [
+    { kind: "lecture", item_id: 1 },
+    { kind: "seminar", item_id: 5 }
+  ]);
+  assert.deepEqual(P.missing(P.empty(), remote, valid), []);
+});
+
+test("10. Нэгтгэсний дараа localStorage-ийн хуучин явц устна", () => {
+  const s = memory();
+  P.save(s, { lectures: [1], seminars: [] });
+  P.clear(s);
+  assert.deepEqual(P.load(s), P.empty());
 });

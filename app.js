@@ -15,21 +15,92 @@
 
   // ---------- Явц (progress.js) ----------
 
+  // Feature №8: нэвтэрсэн оюутны явцыг Supabase-ийн progress хүснэгтэд хадгална.
+  // Supabase тохиргоогүй (AUTH.client алга) бол өмнөх шигээ localStorage-д хадгална.
   const P = window.PROGRESS;
+  const AUTH = window.AUTH || {};
+  const db = AUTH.client || null;
   let store = null;
   try { store = window.localStorage; } catch (e) { store = null; }
-  const noStore = { getItem: () => null, setItem: () => { throw new Error("storage алга"); } };
-  let progress = P.load(store || noStore);
+  const noStore = { getItem: () => null, setItem: () => { throw new Error("storage алга"); }, removeItem: () => {} };
+  let user = null;
+  let progress = db ? P.empty() : P.load(store || noStore);
 
-  // Уншсан/уншаагүйг сольж хадгалаад дэлгэцийг шинэчилнэ
-  function toggleRead(kind, id) {
-    progress = P.toggle(progress, kind, id);
-    P.save(store || noStore, progress);
-    render();
+  // Түр мэдэгдэл (хадгалж чадаагүй г.м)
+  let noticeTimer = null;
+  function notice(text) {
+    const n = $("notice");
+    n.textContent = text;
+    n.hidden = false;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => { n.hidden = true; }, 5000);
   }
 
-  // Хуудасны төгсгөлийн "Уншсан гэж тэмдэглэх" товч
+  // Уншсан/уншаагүйг сольж хадгалаад дэлгэцийг шинэчилнэ.
+  // Баазад хадгалахдаа дэлгэцийг шууд шинэчилж, алдаа гарвал буцаана
+  async function toggleRead(kind, id) {
+    if (!db) {
+      progress = P.toggle(progress, kind, id);
+      P.save(store || noStore, progress);
+      render();
+      return;
+    }
+    if (!user) { AUTH.open(); return; }
+    const before = progress;
+    progress = P.toggle(progress, kind, id);
+    render();
+    const row = { student_id: user.id, kind: P.dbKind(kind), item_id: id };
+    const res = P.has(progress, kind, id)
+      ? await db.from("progress").insert(row)
+      : await db.from("progress").delete().match(row);
+    if (res.error && res.error.code !== "23505") { // 23505: аль хэдийн тэмдэглэсэн (өөр төхөөрөмжөөс)
+      progress = before;
+      render();
+      notice("Хадгалж чадсангүй. Дахин оролдоно уу.");
+    }
+  }
+
+  // Нэвтэрмэгц явцыг баазаас уншина. Энэ төхөөрөмжийн localStorage-д хуучин
+  // тэмдэглэгээ байвал баазад нэг удаа нэгтгээд устгана
+  let loadedFor = null;
+  async function loadProgress(u) {
+    const id = u ? u.id : null;
+    if (id === loadedFor) return;
+    loadedFor = id;
+    user = u || null;
+    progress = P.empty();
+    render();
+    if (!u) return;
+
+    const { data, error } = await db.from("progress").select("kind, item_id");
+    if (loadedFor !== id) return; // хооронд нь гарсан эсвэл өөр хүн нэвтэрсэн
+    if (error) { notice("Явцыг уншиж чадсангүй. Хуудсыг дахин ачаална уу."); return; }
+    progress = P.fromRows(data);
+
+    const valid = { lectures: lectures.map((l) => l.id), seminars: SEMINARS.map((s) => s.id) };
+    const add = P.missing(P.load(store || noStore), progress, valid);
+    if (add.length) {
+      const ins = await db.from("progress").upsert(
+        add.map((r) => ({ student_id: id, kind: r.kind, item_id: r.item_id })),
+        { onConflict: "student_id,kind,item_id", ignoreDuplicates: true });
+      if (!ins.error) {
+        progress = P.fromRows(data.concat(add));
+        P.clear(store || noStore);
+      }
+    } else {
+      P.clear(store || noStore);
+    }
+    if (loadedFor === id) render();
+  }
+
+  // Хуудасны төгсгөлийн "Уншсан гэж тэмдэглэх" товч. Нэвтрээгүй бол нэвтрэхийг санал болгоно
   function readButton(kind, id) {
+    if (db && !user) {
+      const b = make("button", "read-btn", "Нэвтэрч тэмдэглэх");
+      b.type = "button";
+      b.addEventListener("click", () => AUTH.open());
+      return b;
+    }
     const done = P.has(progress, kind, id);
     const b = make("button", "read-btn" + (done ? " done" : ""), done ? "Уншсан ✓" : "Уншсан гэж тэмдэглэх");
     b.type = "button";
@@ -269,7 +340,17 @@
     art.textContent = "";
     const sum = P.summary(progress, COURSE, SEMINARS);
     art.appendChild(make("h2", "", "Миний явц"));
-    art.appendChild(make("p", "topic-meta", "Уншсан лекц, семинараа тухайн хуудасны доорх товчоор тэмдэглэнэ. Явц энэ төхөөрөмж дээр хадгалагдана."));
+    if (db && !user) {
+      art.appendChild(make("p", "", "Явцаа тэмдэглэж, аль ч төхөөрөмжөөс харахын тулд утасны дугаараараа нэвтэрнэ үү."));
+      const b = make("button", "read-btn", "Нэвтрэх");
+      b.type = "button";
+      b.addEventListener("click", () => AUTH.open());
+      art.appendChild(b);
+      return;
+    }
+    art.appendChild(make("p", "topic-meta", db
+      ? "Уншсан лекц, семинараа тухайн хуудасны доорх товчоор тэмдэглэнэ. Явц таны хаягт хадгалагдаж, аль ч төхөөрөмжөөс харагдана."
+      : "Уншсан лекц, семинараа тухайн хуудасны доорх товчоор тэмдэглэнэ. Явц энэ төхөөрөмж дээр хадгалагдана."));
     art.appendChild(bar("Нийт", sum.done, sum.total));
     art.appendChild(section("Бүлгээр", sum.chapters.map((c) => bar("Бүлэг " + c.id + ". " + c.title, c.done, c.total))));
 
@@ -406,4 +487,10 @@
 
   const start = fromHash(location.hash);
   go(start[0], start[1]);
+
+  // Нэвтрэх, гарах бүрд явцыг дахин уншина (Feature №8)
+  if (db) {
+    AUTH.onChange(loadProgress);
+    if (AUTH.user) loadProgress(AUTH.user);
+  }
 })();

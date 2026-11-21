@@ -90,7 +90,10 @@
     api.user = user || null;
     btn.textContent = user ? shown(user) + " · Гарах" : "Нэвтрэх";
     btn.setAttribute("aria-label", user ? shown(user) + " дугаараар нэвтэрсэн. Гарах" : "Нэвтрэх");
-    listeners.forEach((fn) => fn(api.user));
+    // onAuthStateChange дотроос supabase-ийн өөр функц дуудвал түгжигддэг тул
+    // сонсогчдыг (№8 явц унших г.м) дараагийн мөчлөгт дуудна
+    const u = api.user;
+    setTimeout(() => listeners.forEach((fn) => fn(u)), 0);
   }
 
   function showError(text) {
@@ -184,6 +187,7 @@
     smsLink.focus();
   });
 
+  api.open = openPhoneStep; // бусад хэсэг (№8) нэвтрэх цонхыг нээнэ
   backBtn.addEventListener("click", openPhoneStep);
   dlg.querySelectorAll("[data-auth-close]").forEach((b) => b.addEventListener("click", () => dlg.close()));
   dlg.addEventListener("close", () => { stop(); login = null; });
