@@ -8,7 +8,11 @@
 </head>
 <body>
   <header class="site-header">
-    <p class="course-code">E.DW416</p>
+    <div class="header-top">
+      <p class="course-code">E.DW416</p>
+      <!-- Нэвтрэх (Feature №6, auth.js). Тохиргоогүй бол нуугдмал -->
+      <button type="button" class="auth-btn" id="auth-btn" hidden>Нэвтрэх</button>
+    </div>
     <h1>Архив, баримт бичигтэй ажиллах арга зүй</h1>
     <nav class="view-switch" aria-label="Хэсэг сонгох">
       <button type="button" data-view="lecture" aria-pressed="true">Лекц</button>
@@ -74,6 +78,32 @@
     <article class="topic" id="progress-area" aria-live="polite"></article>
   </main>
 
+  <!-- Нэвтрэх цонх (Feature №6): 1. дугаар, 2. 144773 руу SMS илгээж хүлээнэ -->
+  <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-title">
+    <h2 id="auth-title">Нэвтрэх</h2>
+    <form id="auth-phone-form" novalidate>
+      <label for="auth-phone">Утасны дугаар</label>
+      <input id="auth-phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="16" placeholder="99112233">
+      <p class="auth-hint">Дараагийн алхамд утаснаасаа 144773 руу код бүхий SMS илгээнэ. Анх удаа бол шинэ хаяг үүснэ.</p>
+      <div class="auth-actions">
+        <button type="submit" class="auth-primary">Үргэлжлүүлэх</button>
+        <button type="button" data-auth-close>Болих</button>
+      </div>
+    </form>
+    <div id="auth-wait" hidden>
+      <p>Утаснаасаа <strong>144773</strong> дугаар руу доорх кодыг SMS-ээр илгээнэ үү.</p>
+      <p class="auth-code" id="auth-code-text"></p>
+      <a class="auth-sms" id="auth-sms-link" href="#">SMS илгээх</a>
+      <p class="auth-hint" id="auth-status" aria-live="polite"></p>
+      <p class="auth-hint">Нэг SMS 150₮. Код 2 минутын дараа хүчингүй болно.</p>
+      <div class="auth-actions">
+        <button type="button" id="auth-back">Дугаар солих</button>
+        <button type="button" data-auth-close>Болих</button>
+      </div>
+    </div>
+    <p class="auth-error" id="auth-error" role="alert" hidden></p>
+  </dialog>
+
   <footer class="site-footer">
     <p id="checked-note"></p>
   </footer>
@@ -82,6 +112,9 @@
   <script src="seminars.js"></script>
   <script src="laws.js"></script>
   <script src="progress.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
   <script src="app.js"></script>
   <script src="docs-data.js"></script>
   <script src="docs-view.js"></script>

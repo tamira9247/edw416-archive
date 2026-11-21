@@ -18,8 +18,9 @@
   - Сангийн нууц үг: зөвхөн та мэднэ (нууц үгийн менежерт). Терминал асуувал өөрөө бичнэ.
   - wesend.mn түлхүүр: Supabase Dashboard → Edge Functions → Secrets (`WESEND_API_KEY`).
     Дотоодод `supabase/functions/.env` файлд. Энэ файлыг та өөрөө үүсгэнэ, `.gitignore` хасдаг.
-  - verify.mn түлхүүр (нэвтрэлтийн SMS код): мөн адил Secrets-д (`VERIFY_API_KEY`), дотоодод
-    `supabase/functions/.env` файлд. Утгыг та өөрөө оруулна.
+  - verify.mn түлхүүр (нэвтрэлт, `login-start`, `login-check`): мөн адил Secrets-д
+    (`VERIFY_API_KEY`). Утгыг та өөрөө оруулна. Дотоодод хэрэггүй: функцууд дотоодод
+    verify.mn руу хандахгүй, тест дугааруудыг (seed.sql) шууд баталгаажуулна.
   - service_role түлхүүр: кодонд, хөтчид хэзээ ч орохгүй. Зөвхөн Supabase Dashboard дотор ашиглагдана.
 
 ## Орчин солих дүрэм
@@ -120,16 +121,18 @@
     Хэн: Claude (нууц үг асуувал та бичнэ).
     Шалгах: Dashboard → Table Editor-т хүснэгт харагдаж, RLS асаалттай байна.
 
-4.5 Юу: `WESEND_API_KEY`-г үүлэнд хадгална.
+4.5 Юу: `VERIFY_API_KEY` (нэвтрэлт), `WESEND_API_KEY` (№7)-г үүлэнд хадгална.
     Хэн: Та, Dashboard → Edge Functions → Secrets → Add.
     Шалгах: Secrets жагсаалтад нэр нь харагдана (утга нь харагдахгүй).
 
-4.6 Юу: Edge Function-ийг байршуулна (`npx supabase functions deploy send-reminder`).
+4.6 Юу: Edge Function-уудыг байршуулна: `npx supabase functions deploy login-start`,
+    `login-check` (№6), `send-reminder` (№7).
     Хэн: Claude.
     Шалгах: Dashboard → Edge Functions-д функц "Active" гэж гарна.
 
 4.7 Юу: Нэвтрэлтийн тохиргоо: Site URL, Redirect URL-д GitHub Pages-ийн хаягийг оруулна.
-    SMS кодоор баталгаажуулахаар шийдсэн бол (0.2) Phone нэвтрэлтийг асааж, кодыг verify.mn-ээр (Send SMS Hook) илгээнэ.
+    Phone нэвтрэлтийг асаах шаардлагагүй (verify.mn-ийг функцууд шалгана). Email нэвтрэлт асаалттай
+    байна (нэвтрэх токенийг дотоод хаягаар үүсгэдэг, имэйл илгээгдэхгүй).
     Хэн: Та, Dashboard → Authentication → URL Configuration / Providers.
     Шалгах: Тэр хуудсан дээр хадгалсан хаягууд харагдана.
 
