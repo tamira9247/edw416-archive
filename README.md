@@ -28,6 +28,8 @@ E.DW416 хичээлийн оюутнуудад зориулсан
 - `test/content.test.js`: агуулгын өгөгдлийн тест
 - `test/docs.test.js`: Лавлахын өгөгдлийн тест
 - `test/progress.test.js`: явцын дүрмийн тест
+- `mongol_tsegtslal.md`: монгол бичвэрийн цэг таслалын дүрэм
+- `.claude/commands/hyanalt.md`: байршуулахын өмнөх хяналт (`/hyanalt` command)
 
 ## Feature-үүд
 
