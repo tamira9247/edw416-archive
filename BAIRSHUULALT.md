@@ -18,6 +18,8 @@
   - Сангийн нууц үг: зөвхөн та мэднэ (нууц үгийн менежерт). Терминал асуувал өөрөө бичнэ.
   - wesend.mn түлхүүр: Supabase Dashboard → Edge Functions → Secrets (`WESEND_API_KEY`).
     Дотоодод `supabase/functions/.env` файлд. Энэ файлыг та өөрөө үүсгэнэ, `.gitignore` хасдаг.
+  - verify.mn түлхүүр (нэвтрэлтийн SMS код): мөн адил Secrets-д (`VERIFY_API_KEY`), дотоодод
+    `supabase/functions/.env` файлд. Утгыг та өөрөө оруулна.
   - service_role түлхүүр: кодонд, хөтчид хэзээ ч орохгүй. Зөвхөн Supabase Dashboard дотор ашиглагдана.
 
 ## Орчин солих дүрэм
@@ -127,7 +129,7 @@
     Шалгах: Dashboard → Edge Functions-д функц "Active" гэж гарна.
 
 4.7 Юу: Нэвтрэлтийн тохиргоо: Site URL, Redirect URL-д GitHub Pages-ийн хаягийг оруулна.
-    SMS кодоор баталгаажуулахаар шийдсэн бол (0.2) Phone нэвтрэлтийг асааж, SMS-ийг wesend.mn-ээр илгээнэ.
+    SMS кодоор баталгаажуулахаар шийдсэн бол (0.2) Phone нэвтрэлтийг асааж, кодыг verify.mn-ээр (Send SMS Hook) илгээнэ.
     Хэн: Та, Dashboard → Authentication → URL Configuration / Providers.
     Шалгах: Тэр хуудсан дээр хадгалсан хаягууд харагдана.
 
